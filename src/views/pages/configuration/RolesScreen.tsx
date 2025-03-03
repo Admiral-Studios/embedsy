@@ -34,7 +34,6 @@ const RolesScreen = () => {
   const [openRemoveModal, setOpenRemoveModal] = useState(false)
   const [visibleRoles, setVisibleRoles] = useState(CONFIG_ITEMS_PER_PAGE)
   const [roleIdToDelete, setRoleIdToDelete] = useState<number | null>(null)
-  const [roleIdToAssignUser, setRoleIdToAssignUser] = useState<number | null>(null)
   const [roleToAssignUser, setRoleToAssignUser] = useState<RoleWithUsersPagesType | null>(null)
   const [pageToAdd, setPageToAdd] = useState<CreationPageType | null>(null)
   const [roleToUpdate, setRoleToUpdate] = useState<RoleWithUsersPagesType | null>(null)
@@ -82,13 +81,12 @@ const RolesScreen = () => {
   }
 
   const handleAssignUsersClick = (role: RoleWithUsersPagesType) => {
-    setRoleIdToAssignUser(role.id)
     setRoleToAssignUser(role)
   }
 
   const handleAssignUsers = async (emails: string[]) => {
-    if (roleIdToAssignUser) {
-      await Promise.all(emails.map(email => assignUserToRole(roleIdToAssignUser, email)))
+    if (roleToAssignUser?.id) {
+      await Promise.all(emails.map(email => assignUserToRole(roleToAssignUser?.id, email)))
     }
   }
 
@@ -400,10 +398,10 @@ const RolesScreen = () => {
       />
 
       <AddUserModal
-        open={!!roleIdToAssignUser}
+        open={!!roleToAssignUser?.id}
         roleToAssignUser={roleToAssignUser}
         allUsersEmails={allUsersEmails}
-        onClose={() => setRoleIdToAssignUser(null)}
+        onClose={() => setRoleToAssignUser(null)}
         handleProcessed={handleAssignUsers}
       />
 
