@@ -3,18 +3,22 @@ import React, { useState } from 'react'
 import CustomDialog from 'src/components/shared/CustomDialog'
 import AutocompleteInput from 'src/components/shared/AutocompleteInput'
 import { emailRegex } from 'src/utils/regex'
+import { RoleWithUsersPagesType } from 'src/types/types'
 
 type Props = {
   open: boolean
   onClose: () => void
   handleProcessed: (emails: string[]) => Promise<void>
   allUsersEmails: string[]
+  roleToAssignUser: RoleWithUsersPagesType | null
 }
 
-const AddUserModal = ({ open, onClose, handleProcessed, allUsersEmails }: Props) => {
+const AddUserModal = ({ open, onClose, handleProcessed, allUsersEmails, roleToAssignUser }: Props) => {
   const [emails, setEmails] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const options = allUsersEmails.filter(user => !roleToAssignUser?.users.map(user => user.email)?.includes(user))
 
   const onProcessed = async () => {
     setLoading(true)
@@ -48,7 +52,7 @@ const AddUserModal = ({ open, onClose, handleProcessed, allUsersEmails }: Props)
         <Box sx={{ mt: 4 }}>
           <AutocompleteInput
             multiple
-            options={allUsersEmails}
+            options={options}
             freeSolo
             placeholder='Add user emails. Press "Enter" after each email.'
             value={emails}
