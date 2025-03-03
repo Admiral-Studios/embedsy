@@ -28,14 +28,6 @@ const AddUserModal = ({ open, onClose, handleProcessed, allUsersEmails }: Props)
   }
 
   const onChange = (values: string[]) => {
-    const emailAlreadyExist = values.some(email => allUsersEmails.includes(email))
-
-    if (emailAlreadyExist) {
-      setError('User with this email is already exist')
-
-      return
-    }
-
     if (values.some(v => !emailRegex.test(v))) {
       setError('Please enter a valid email')
 
@@ -56,6 +48,7 @@ const AddUserModal = ({ open, onClose, handleProcessed, allUsersEmails }: Props)
         <Box sx={{ mt: 4 }}>
           <AutocompleteInput
             multiple
+            options={allUsersEmails}
             freeSolo
             placeholder='Add user emails. Press "Enter" after each email.'
             value={emails}
