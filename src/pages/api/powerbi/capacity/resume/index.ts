@@ -41,8 +41,6 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
     return response.status(200).json({ message: 'Capacity resumed successfully' })
   } catch (error: any) {
-    console.log(error)
-    
-return response.status(error.response?.status || 500).json({ error: 'Failed to resume capacity' })
+    return response.status(error.response?.status || 500).json({ error: 'Failed to resume capacity' })
   }
 }

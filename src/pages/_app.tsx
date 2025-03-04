@@ -1,7 +1,8 @@
 // ** React Imports
-import { ReactNode, useEffect } from 'react'
+import { ReactNode } from 'react'
 
 // ** Next Imports
+import Head from 'next/head'
 import { Router } from 'next/router'
 import type { NextPage } from 'next'
 import type { AppProps } from 'next/app'
@@ -62,10 +63,8 @@ import '../../styles/globals.css'
 import '../layouts/styles/powerbi.css'
 import { ContextProvider } from 'src/context/ReportContext'
 import { AdminRolesProvider } from 'src/context/AdminRolesContext'
-
+import useSocket from 'src/@core/hooks/useSocket'
 import MsalAuthProvider from 'src/context/MsalAuthContext'
-import { startActivityCron } from 'src/utils/cron/startActivityCron'
-import DynamicHead from 'src/components/DynamicHead'
 
 // ** Extend App Props with Emotion
 type ExtendedAppProps = AppProps & {
@@ -108,10 +107,6 @@ const Guard = ({ children, authGuard, guestGuard }: GuardProps) => {
 const App = (props: ExtendedAppProps) => {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props
 
-  useEffect(() => {
-    startActivityCron()
-  }, [])
-
   // Variables
   const contentHeightFixed = Component.contentHeightFixed ?? false
   const getLayout =
@@ -125,19 +120,29 @@ const App = (props: ExtendedAppProps) => {
 
   const aclAbilities = Component.acl ?? defaultACLObj
 
+  useSocket()
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <CacheProvider value={emotionCache}>
+        <Head>
+          <title>{`${themeConfig.templateName} - ${process.env.NEXT_PUBLIC_APP_NAME}`}</title>
+          <meta
+            name='description'
+            content={`${themeConfig.templateName} – ${process.env.NEXT_PUBLIC_META_DESCRIPTION}`}
+          />
+          <meta name='keywords' content={process.env.NEXT_PUBLIC_META_KEYWORDS} />
+          <meta name='viewport' content='initial-scale=1, width=device-width' />
+        </Head>
         <MsalAuthProvider>
           <AuthProvider>
             <AdminRolesProvider>
-              <SettingsProvider {...(setConfig ? { pageSettings: setConfig() } : {})}>
-                <SessionProvider>
+              <SessionProvider>
+                <SettingsProvider {...(setConfig ? { pageSettings: setConfig() } : {})}>
                   <SettingsConsumer>
                     {({ settings }) => {
                       return (
                         <ThemeComponent settings={settings}>
-                          <DynamicHead />
                           <Guard authGuard={authGuard} guestGuard={guestGuard}>
                             <AclGuard aclAbilities={aclAbilities} guestGuard={guestGuard} authGuard={authGuard}>
                               <ContextPagesProvider>
@@ -145,13 +150,7 @@ const App = (props: ExtendedAppProps) => {
                               </ContextPagesProvider>
                             </AclGuard>
                           </Guard>
-                          <ReactHotToast
-                            sx={{
-                              '> div': {
-                                zIndex: '9999 !important'
-                              }
-                            }}
-                          >
+                          <ReactHotToast>
                             <Toaster
                               position={settings.toastPosition}
                               toastOptions={{ className: 'react-hot-toast' }}
@@ -161,8 +160,8 @@ const App = (props: ExtendedAppProps) => {
                       )
                     }}
                   </SettingsConsumer>
-                </SessionProvider>
-              </SettingsProvider>
+                </SettingsProvider>
+              </SessionProvider>
             </AdminRolesProvider>
           </AuthProvider>
         </MsalAuthProvider>

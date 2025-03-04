@@ -1,7 +1,7 @@
 // ** MUI Imports
 import Box from '@mui/material/Box'
 import { useRouter } from 'next/router'
-import { useContext, useMemo, useEffect, useState } from 'react'
+import { useContext, useMemo } from 'react'
 
 // ** Type Import
 import { Settings } from 'src/@core/context/settingsContext'
@@ -32,13 +32,6 @@ const AppBarContent = (props: Props) => {
   const { report } = useContext(ReportContext) || {}
   const { canViewRoles } = useAdminRoles()
   const { powerBIEmbedCapacityActive, powerBICapacityExists } = useSettings()
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-    
-return () => setIsMounted(false)
-  }, [])
 
   const circleColor = useMemo(() => {
     if (powerBIEmbedCapacityActive) {
@@ -56,7 +49,7 @@ return () => setIsMounted(false)
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      {isMounted && isDashboardPath && <ModeFullscreen disabled={!isLoaded} onClick={() => report?.fullscreen()} />}
+      {isDashboardPath && <ModeFullscreen disabled={!isLoaded} onClick={() => report?.fullscreen()} />}
       {canViewRoles && powerBICapacityExists && (
         <Tooltip title={powerBIEmbedCapacityActive ? 'Capacity On' : 'Capacity Suspended'} placement='top'>
           <Circle color={circleColor} />

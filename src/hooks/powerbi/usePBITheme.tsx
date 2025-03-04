@@ -1,5 +1,6 @@
-import { useContext, useEffect, useRef, useState } from 'react'
-import { useSettings } from 'src/@core/hooks/useSettings'
+import { useTheme } from '@mui/material'
+import { useContext, useEffect } from 'react'
+
 import { ReportContext } from 'src/context/ReportContext'
 
 type Props = {
@@ -9,51 +10,18 @@ type Props = {
 
 export const usePBITheme = ({ darkThemeConfig, lightThemeConfig }: Props) => {
   const { report } = useContext(ReportContext) || {}
-  const { settings } = useSettings()
-  const prevReportIdRef = useRef<string | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
+  const theme = useTheme()
 
   useEffect(() => {
     if (report) {
       const changeTheme = async () => {
-        const themeMode = settings.mode === 'dark' ? 'dark' : 'light'
-        const currentReportId = (report.config as any).id
-        const themeConfig = themeMode === 'dark' ? darkThemeConfig : lightThemeConfig
-
-        if (themeConfig) {
-          const applyTheme = async () => {
-            try {
-              await report.applyTheme({ themeJson: themeConfig })
-            } catch (error) {
-              console.error('Error applying theme:', error)
-            }
-          }
-
-          if (!isInitialized) {
-            report.on('loaded', async () => {
-              await applyTheme()
-              setIsInitialized(true)
-            })
-          }
-
-          if (isInitialized) {
-            if (currentReportId === prevReportIdRef.current) {
-              applyTheme()
-            } else {
-              setTimeout(applyTheme, 3000)
-            }
-          }
-
-          prevReportIdRef.current = currentReportId
+        if (theme.palette.mode === 'light' && lightThemeConfig) {
+          await report.applyTheme({ themeJson: lightThemeConfig })
+        } else if (theme.palette.mode === 'dark' && darkThemeConfig) {
+          await report.applyTheme({ themeJson: darkThemeConfig })
         }
       }
       changeTheme()
     }
-
-    return () => {
-      if (report) {
-        setIsInitialized(false)
-      }
-    }
-  }, [report, settings.mode, darkThemeConfig, lightThemeConfig, isInitialized])
+  }, [report, theme.palette.mode, darkThemeConfig, lightThemeConfig])
 }

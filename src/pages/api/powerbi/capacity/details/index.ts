@@ -3,7 +3,7 @@ import axios from 'axios'
 import { getPortalCapacitySettingsFromDB } from 'src/pages/api/db_transactions/portal_settings/get'
 import { getCapacityAPIVersion, CapacityType } from 'src/utils/powerbi/powerbiCapacityTypes'
 
-export default async function handler(_: NextApiRequest, response: NextApiResponse) {
+export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   const authenticationToken = await axios
     .get(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/auth-token-management`)
     .then(res => res.data.access_token)
@@ -39,8 +39,6 @@ export default async function handler(_: NextApiRequest, response: NextApiRespon
       return response.status(200).json({ state: currentState })
     }
   } catch (error: any) {
-    console.error(error)
-
     return response.status(error.response?.status || 500).json({ error: 'Failed to get capacity details' })
   }
 }

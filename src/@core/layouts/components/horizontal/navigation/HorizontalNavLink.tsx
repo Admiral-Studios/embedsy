@@ -31,7 +31,6 @@ import CanViewNavLink from 'src/layouts/components/acl/CanViewNavLink'
 
 // ** Util Imports
 import { hexToRGBA } from 'src/@core/utils/hex-to-rgba'
-import { PageTypesEnum } from 'src/enums/pageTypes'
 
 interface Props {
   item: NavLink
@@ -96,14 +95,6 @@ const HorizontalNavLink = (props: Props) => {
             if (item.path === undefined) {
               e.preventDefault()
               e.stopPropagation()
-            }
-            if (item.type === PageTypesEnum.Hyperlink) {
-              e.preventDefault()
-              if (item.openInNewTab) {
-                window.open(item.path, '_blank')
-              } else {
-                window.location.href = item.path || ''
-              }
             }
           }}
           sx={{

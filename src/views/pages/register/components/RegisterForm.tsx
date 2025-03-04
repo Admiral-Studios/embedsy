@@ -33,13 +33,6 @@ const LinkStyled = styled(Link)(({ theme }) => ({
   color: `${theme.palette.primary.main} !important`
 }))
 
-const RegisterButton = styled(Button)(({ theme }) => ({
-  '&.MuiButtonBase-root.MuiButton-root.MuiButton-contained.MuiButton-containedPrimary.MuiButton-sizeMedium.MuiButton-containedSizeMedium.MuiButton-disableElevation.MuiButton-fullWidth':
-    {
-      color: `${theme.palette.customColors.contrastTextColor} !important`
-    }
-}))
-
 const schema = yup.object().shape({
   email: yup.string().email().required(),
   user_name: yup.string().min(3),
@@ -128,18 +121,14 @@ const RegisterForm = () => {
     try {
       const response = await axios.post('/api/auth/register', userData)
       if (response.data?.message) {
-        setErrorText(response.data?.message)
-
-        return
+        return setErrorText(response.data?.message)
       }
-
-      toast.success('The account has been successfully created. Please sign in with your credentials.', {
-        duration: 10000
-      })
-
+      toast.success(
+        'The account has been successfully created. Please confirm your email, we have sent a confirmation email',
+        { duration: 10000 }
+      )
       router.push('/login')
     } catch (e) {
-      toast.error('An error occurred during registration. Please try again.')
       console.log(e)
     }
   }
@@ -152,14 +141,10 @@ const RegisterForm = () => {
         src={appBranding?.appLogo || process.env.NEXT_PUBLIC_MAIN_LOGO_PATH || '/images/branding/main_logo.png'}
       />
       <Box sx={{ my: 6 }}>
-        {appPortalSettings.landing_page_title && (
-          <Typography variant='h3' sx={{ mb: 1.5 }}>
-            {appPortalSettings.landing_page_title}
-          </Typography>
-        )}
-        {appPortalSettings.landing_page_subtitle && (
-          <Typography sx={{ color: 'text.secondary' }}>{appPortalSettings.landing_page_subtitle}</Typography>
-        )}
+        <Typography variant='h3' sx={{ mb: 1.5 }}>
+          {appPortalSettings.landing_page_title}
+        </Typography>
+        <Typography sx={{ color: 'text.secondary' }}>{appPortalSettings.landing_page_subtitle}</Typography>
       </Box>
       <form noValidate autoComplete='off' onSubmit={handleSubmit(signUp)}>
         <CustomTextField
@@ -263,9 +248,9 @@ const RegisterForm = () => {
           }}
         />
 
-        <RegisterButton fullWidth type='submit' variant='contained' sx={{ mb: 4 }}>
+        <Button fullWidth type='submit' variant='contained' sx={{ mb: 4 }}>
           Sign up
-        </RegisterButton>
+        </Button>
         <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
           <Typography sx={{ color: 'text.secondary', mr: 2 }}>Already have an account?</Typography>
           <Typography component={LinkStyled} href='/login'>

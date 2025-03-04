@@ -117,8 +117,8 @@ const UploadFilesModal = ({ open, onUploadSuccess, handleClose }: Props) => {
   const handleUpload = useCallback(async () => {
     if (!files.length) {
       setUploadError('No files selected.')
-
-      return
+      
+return
     }
 
     setUploadError(null)
@@ -149,7 +149,7 @@ const UploadFilesModal = ({ open, onUploadSuccess, handleClose }: Props) => {
   }, [files, onUploadSuccess])
 
   return (
-    <CustomModal open={open} customwidth={500} handleClose={handleClose} title='Upload JSON Files'>
+    <CustomModal open={open} customWidth={500} handleClose={handleClose} title='Upload JSON Files'>
       {files.length > 0 && (
         <Box sx={{ mt: 2, height: '250px' }}>
           <Carousel>

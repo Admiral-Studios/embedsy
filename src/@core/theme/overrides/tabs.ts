@@ -26,19 +26,11 @@ const Tabs = () => {
         root: ({ theme }: OwnerStateThemeType) => ({
           minHeight: 38,
           textTransform: 'none',
-          padding: theme.spacing(1.75, 5),
-          '&.Mui-selected': {
-            color: `${theme.palette.customColors.contrastTextColor} !important`
-          }
-        }),
-        textColorPrimary: ({ theme }: OwnerStateThemeType) => ({
-          '&.Mui-selected': {
-            color: `${theme.palette.customColors.contrastTextColor} !important`
-          }
+          padding: theme.spacing(1.75, 5)
         }),
         textColorSecondary: ({ theme }: OwnerStateThemeType) => ({
           '&.Mui-selected': {
-            color: `${theme.palette.customColors.contrastTextColor} !important`
+            color: theme.palette.text.secondary
           }
         })
       }

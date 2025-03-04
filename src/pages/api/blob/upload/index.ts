@@ -49,7 +49,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<{ urls?: string
             blobHTTPHeaders: { blobContentType: file.mimetype as string | undefined }
           })
 
-          return `https://${process.env.NEXT_PUBLIC_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${process.env.NEXT_PUBLIC_STORAGE_CONTAINER_NAME}/${blobName}`
+          return `https://${process.env.NEXT_PUBLIC_AZURE_ACCOUNT_NAME}.blob.core.windows.net/${process.env.NEXT_PUBLIC_AZURE_CONTAINER_NAME}/${blobName}`
         })
       )
 

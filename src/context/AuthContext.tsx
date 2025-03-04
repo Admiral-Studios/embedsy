@@ -22,21 +22,18 @@ import {
   AzureLoginParams
 } from './types'
 import toast from 'react-hot-toast'
-import { PortalSettingNames } from 'src/@core/context/settingsContext'
 
 // ** Defaults
-const unprotectedRoutes: string[] = ['/forgot-password']
+const unprotectedRoutes: string[] = []
 
 const defaultProvider: AuthValuesType = {
   user: null,
   isAdmin: false,
   isSuperAdmin: false,
   canRefresh: false,
-  canExport: false,
   hasAdminPrivileges: false,
   additionalNavItems: [],
   loading: true,
-  defaultLoginActive: false,
   setUser: () => null,
   setLoading: () => Boolean,
   login: () => Promise.resolve(),
@@ -63,53 +60,22 @@ const AuthProvider = ({ children }: Props) => {
   const isAdmin = useMemo(() => role === PermanentRoles.admin, [role])
   const isSuperAdmin = useMemo(() => role === PermanentRoles.super_admin, [role])
   const canRefresh = useMemo(() => user?.can_refresh, [user])
-  const canExport = useMemo(() => user?.can_export, [user])
   const hasAdminPrivileges = useMemo(() => isAdmin || isSuperAdmin, [isAdmin, isSuperAdmin])
 
   const [loading, setLoading] = useState<boolean>(defaultProvider.loading)
   const [navItems, setNavItems] = useState(defaultProvider.additionalNavItems)
-  const [defaultLoginActive, setDefaultLoginActive] = useState<boolean>(false)
 
   // ** Hooks
   const router = useRouter()
-
-  useEffect(() => {
-    const fetchDefaultLoginSetting = async () => {
-      try {
-        const response = await axios.get(
-          `/api/db_transactions/portal_settings/get?setting=${PortalSettingNames.default_login_active}`
-        )
-        const defaultLoginSetting = response.data
-        setDefaultLoginActive(defaultLoginSetting?.value_boolean || false)
-      } catch (error) {
-        console.error('Error fetching default login setting', error)
-        setDefaultLoginActive(false)
-      }
-    }
-
-    fetchDefaultLoginSetting()
-  }, [])
 
   const handleLogin = (params: LoginParams, errorCallback?: ErrCallbackType) => {
     axios
       .post('/api/auth/login', params, { withCredentials: true })
       .then(async response => {
         const returnUrl = router.query.returnUrl
-        const appStateResponse = await axios.get('/api/state/application_state')
-        const userData = {
-          ...response.data.userData,
-          username: response.data.userData.user_name,
-          active_app: appStateResponse.data.active
-        }
-        setUser(userData)
+        setUser({ ...response.data.userData, username: response.data.userData.user_name })
 
-        window.localStorage.setItem('userData', JSON.stringify(userData))
-
-        if (!appStateResponse.data.active) {
-          router.replace('/inactive-application')
-
-          return
-        }
+        window.localStorage.setItem('userData', JSON.stringify(response.data.userData))
 
         const redirectURL = returnUrl && returnUrl !== '/' ? returnUrl : '/'
         router.replace(redirectURL as string)
@@ -141,21 +107,9 @@ const AuthProvider = ({ children }: Props) => {
       .post('/api/auth/azure-login', params, { withCredentials: true })
       .then(async response => {
         const returnUrl = router.query.returnUrl
-        const appStateResponse = await axios.get('/api/state/application_state')
-        const userData = {
-          ...response.data.userData,
-          username: response.data.userData.user_name,
-          active_app: appStateResponse.data.active
-        }
-        setUser(userData)
+        setUser({ ...response.data.userData, username: response.data.userData.user_name })
 
-        window.localStorage.setItem('userData', JSON.stringify(userData))
-
-        if (!appStateResponse.data.active) {
-          router.replace('/inactive-application')
-
-          return
-        }
+        window.localStorage.setItem('userData', JSON.stringify(response.data.userData))
 
         const redirectURL = returnUrl && returnUrl !== '/' ? returnUrl : '/'
         router.replace(redirectURL as string)
@@ -212,44 +166,29 @@ const AuthProvider = ({ children }: Props) => {
     const initAuth = async (): Promise<void> => {
       setLoading(true)
       if (!unprotectedRoutes.includes(router.route)) {
-        try {
-          const response = await axios.get('/api/auth/me', { withCredentials: true })
-
-          if (response.status === 204) {
-            router.replace('/')
-
-            return
-          }
-
-          const { userData } = response.data
-          if (userData?.role === PermanentRoles.super_admin || userData?.role === PermanentRoles.admin) {
-            const viewAsCustomRoleCookie = Cookies.get('viewAsCustomRole')
-            if (viewAsCustomRoleCookie) {
-              const { data } = await axios.post(
-                `${process.env.NEXT_PUBLIC_URL}/api/db_transactions/role/get/by_custom_role`,
-                { roleId: viewAsCustomRoleCookie }
-              )
-              const { workspaces: viewAsCustomRoleWorkspaces, iframes, hyperlinks } = data
-
-              userData.workspaces = viewAsCustomRoleWorkspaces
-              userData.iframes = iframes
-              userData.hyperlinks = hyperlinks
+        await axios
+          .get('/api/auth/me', { withCredentials: true })
+          .then(async response => {
+            const { userData } = response.data
+            if (userData?.role === PermanentRoles.super_admin || userData?.role === PermanentRoles.admin) {
+              const viewAsCustomRoleCookie = Cookies.get('viewAsCustomRole')
+              if (viewAsCustomRoleCookie) {
+                const { data } = await axios.post(
+                  `${process.env.NEXT_PUBLIC_URL}/api/db_transactions/role/get/by_custom_role`,
+                  { roleId: viewAsCustomRoleCookie }
+                )
+                const { workspaces: viewAsCustomRoleWorkspaces } = data
+                userData.workspaces = viewAsCustomRoleWorkspaces
+              }
             }
-          }
-          const appStateResponse = await axios.get('/api/state/application_state')
-          setUser({ ...userData, username: userData.user_name, active_app: appStateResponse.data.active })
-
-          if (!appStateResponse.data.active) {
-            router.replace('/inactive-application')
-
-            return
-          }
-        } catch (error: any) {
-          handleLogout()
-          router.replace('/')
-        } finally {
-          setLoading(false)
-        }
+            setUser({ ...userData, username: userData.user_name })
+          })
+          .catch(() => {
+            handleLogout()
+            if (router.route !== '/login') {
+              router.replace('/login')
+            }
+          })
       }
 
       setLoading(false)
@@ -264,11 +203,9 @@ const AuthProvider = ({ children }: Props) => {
     isAdmin,
     isSuperAdmin,
     canRefresh: canRefresh || false,
-    canExport: canExport || false,
     hasAdminPrivileges,
     additionalNavItems: navItems,
     loading,
-    defaultLoginActive,
     setUser,
     setLoading,
     login: handleLogin,

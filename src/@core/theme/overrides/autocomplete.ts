@@ -34,6 +34,13 @@ const Autocomplete = (skin: Skin) => {
                     color: 'inherit'
                   }
                 },
+                '&[aria-selected="true"]': {
+                  color: theme.palette.common.white,
+                  backgroundColor: theme.palette.primary.main,
+                  '& .MuiTypography-root, & svg': {
+                    color: 'inherit'
+                  }
+                },
                 '& .MuiCheckbox-root.Mui-checked path:first-of-type': {
                   fill: theme.palette.common.white
                 },

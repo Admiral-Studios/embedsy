@@ -38,15 +38,10 @@ const Register = () => {
 
   // ** Image render
   const leftImageRender = (
-    <RegisterImage
-      key='left-image'
-      customBrandingLoaded={customBrandingLoaded}
-      customImage={appBranding?.registration_page_image}
-    />
+    <RegisterImage customBrandingLoaded={customBrandingLoaded} customImage={appBranding?.registration_page_image} />
   )
   const rightImageRender = (
     <RegisterImage
-      key='right-image'
       customBrandingLoaded={customBrandingLoaded}
       customImage={appBranding?.registration_page_image}
       sx={{ margin: theme => theme.spacing(8, 8, 8, 0) }}
@@ -55,7 +50,7 @@ const Register = () => {
 
   // ** Register form render
   const registerFormRender = (
-    <FormWrapper key='register-form'>
+    <FormWrapper>
       <Box
         sx={{
           p: [6, 12],

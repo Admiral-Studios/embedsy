@@ -209,7 +209,6 @@ const Button = () => {
         contained: ({ theme }: OwnerStateThemeType) => ({
           boxShadow: theme.shadows[2],
           padding: theme.spacing(2.5, 5),
-          color: `${theme.palette.customColors.contrastTextColor} !important`,
           '&:hover': {
             boxShadow: theme.shadows[2]
           }

@@ -1,14 +1,17 @@
-import { CircularProgress, Grid, useMediaQuery } from '@mui/material'
+import { CircularProgress, Grid, Typography, useMediaQuery } from '@mui/material'
 import { styled, Theme } from '@mui/material/styles'
 import TabPanel from '@mui/lab/TabPanel'
 import TabContext from '@mui/lab/TabContext'
 import Tab from '@mui/material/Tab'
 import MuiTabList, { TabListProps } from '@mui/lab/TabList'
 import Box from '@mui/material/Box'
+
 import Icon from 'src/@core/components/icon'
-import { ReactElement, SyntheticEvent, useState, useEffect } from 'react'
+
+import { ReactElement, SyntheticEvent, useState } from 'react'
 import { useRouter } from 'next/router'
-import dynamic from 'next/dynamic'
+import TabAccount from 'src/views/pages/profile/TabAccount'
+import TabSecurity from 'src/views/pages/profile/TabSecurity'
 import { SubjectTypes } from 'src/types/acl/subjectTypes'
 
 const TabList = styled(MuiTabList)<TabListProps>(({ theme }) => ({
@@ -40,31 +43,25 @@ const TabList = styled(MuiTabList)<TabListProps>(({ theme }) => ({
   }
 }))
 
-const TabAccount = dynamic(() => import('src/views/pages/profile/TabAccount'))
-const TabSecurity = dynamic(() => import('src/views/pages/profile/TabSecurity'))
-
 const tabContentList: { [key: string]: ReactElement } = {
   account: <TabAccount />,
   security: <TabSecurity />
 }
 
 const ProfilePage = () => {
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState<string>('account')
+  const { push } = useRouter()
+
+  const [activeTab, setActiveTab] = useState('account')
   const [isLoading, setIsLoading] = useState(false)
-  const hideText = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'))
 
-  useEffect(() => {
-    if (router.query.tab) {
-      setActiveTab(router.query.tab as string)
-    }
-  }, [router.query.tab])
-
-  const handleChange = (_: SyntheticEvent, value: string) => {
+  const handleChange = (event: SyntheticEvent, value: string) => {
     setIsLoading(true)
     setActiveTab(value)
-    router.push(`/profile/${value.toLowerCase()}`).then(() => setIsLoading(false))
+
+    push(`/profile/${value.toLowerCase()}`).then(() => setIsLoading(false))
   }
+
+  const hideText = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'))
 
   return (
     <Grid container spacing={6}>
@@ -72,7 +69,12 @@ const ProfilePage = () => {
         <TabContext value={activeTab}>
           <Grid container spacing={6}>
             <Grid item xs={12}>
-              <TabList variant='scrollable' scrollButtons='auto' onChange={handleChange}>
+              <TabList
+                variant='scrollable'
+                scrollButtons='auto'
+                onChange={handleChange}
+                aria-label='customized tabs example'
+              >
                 <Tab
                   value='account'
                   label={
@@ -95,8 +97,9 @@ const ProfilePage = () => {
             </Grid>
             <Grid item xs={12}>
               {isLoading ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CircularProgress />
+                <Box sx={{ mt: 6, display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
+                  <CircularProgress sx={{ mb: 4 }} />
+                  <Typography>Loading...</Typography>
                 </Box>
               ) : (
                 <TabPanel sx={{ p: 0 }} value={activeTab}>

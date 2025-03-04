@@ -48,5 +48,5 @@ export type PowerBIDatasetType = {
 
 export type PowerBICredentials = {
   reportToken: string
-  embedUrl: string
+  embedURL: string
 }

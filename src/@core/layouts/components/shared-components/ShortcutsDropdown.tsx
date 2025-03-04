@@ -98,7 +98,7 @@ const ShortcutsDropdown = (props: Props) => {
 
   return (
     <Fragment>
-      <IconButton color='inherit' onClick={handleDropdownOpen}>
+      <IconButton color='inherit' aria-haspopup='true' onClick={handleDropdownOpen} aria-controls='customized-menu'>
         <Icon fontSize='1.625rem' icon='tabler:layout-grid-add' />
       </IconButton>
       <Menu

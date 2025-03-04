@@ -61,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { data } = await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/db_transactions/role/get/by_email`, {
     email: user.email
   })
-  const { role, role_id, can_refresh, can_export, workspaces, iframes, can_manage_own_account, hyperlinks } = data
+  const { role, role_id, can_refresh, workspaces } = data
 
   const token = signToken(user.id)
 
@@ -105,10 +105,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       custom_role_id: viewAsCustomRole,
       workspaces: workspaces,
       can_refresh: can_refresh,
-      can_export: can_export,
-      can_manage_own_account: !!can_manage_own_account,
-      iframes,
-      hyperlinks,
       password_set: user.password_hash ? true : false
     }
   })

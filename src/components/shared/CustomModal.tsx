@@ -3,12 +3,12 @@ import { Modal, Box, Typography, IconButton } from '@mui/material'
 import CloseIcon from '@mui/icons-material/Close'
 import { styled } from '@mui/material/styles'
 
-const ModalBoxStyled = styled(Box)<{ customwidth: number }>(({ theme, customwidth }) => ({
+const ModalBoxStyled = styled(Box)<{ customWidth: number }>(({ theme, customWidth }) => ({
   position: 'absolute',
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: customwidth,
+  width: customWidth,
   backgroundColor: theme.palette.background.paper,
   boxShadow: theme.shadows[24],
   padding: theme.spacing(4),
@@ -26,14 +26,19 @@ type Props = {
   open: boolean
   handleClose: () => void
   title: string
-  customwidth?: number
+  customWidth?: number
   children: ReactNode
 }
 
-const CustomModal = ({ open, handleClose, title, customwidth = 450, children }: Props) => {
+const CustomModal = ({ open, handleClose, title, customWidth = 450, children }: Props) => {
   return (
-    <Modal open={open} onClose={handleClose}>
-      <ModalBoxStyled customwidth={customwidth}>
+    <Modal
+      open={open}
+      onClose={handleClose}
+      aria-labelledby='custom-modal-title'
+      aria-describedby='custom-modal-description'
+    >
+      <ModalBoxStyled customWidth={customWidth}>
         <TitleContainerStyled>
           <Typography variant='h6' component='h2'>
             {title}

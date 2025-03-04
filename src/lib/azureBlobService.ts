@@ -6,10 +6,10 @@ class AzureBlobService {
   public static getInstance(): ContainerClient {
     if (!AzureBlobService.instance) {
       const blobServiceClient = BlobServiceClient.fromConnectionString(
-        process.env.NEXT_PUBLIC_STORAGE_CONNECTION_STRING ?? ''
+        process.env.NEXT_PUBLIC_AZURE_STORAGE_CONNECTION_STRING ?? ''
       )
       AzureBlobService.instance = blobServiceClient.getContainerClient(
-        process.env.NEXT_PUBLIC_STORAGE_CONTAINER_NAME ?? ''
+        process.env.NEXT_PUBLIC_AZURE_CONTAINER_NAME ?? ''
       )
     }
 

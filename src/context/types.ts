@@ -1,5 +1,3 @@
-import { RoleReportsType } from 'src/types/types'
-
 export type ErrCallbackType = (err: { [key: string]: string }) => void
 
 export type LoginParams = {
@@ -22,20 +20,12 @@ export type AvailableWorkspaceAndReports = {
   previewPagesReports: string[]
 }
 
-export type IframeType = {
-  iframe_html: string
-  iframe_title: string
-  type: string
-}
-
 export type UserDataType = {
   id: number
   role: string
   role_id?: number
   custom_role_id?: number
-  can_export?: boolean
   can_refresh?: boolean
-  can_manage_own_account: boolean
   workspaces: Array<AvailableWorkspaceAndReports>
   email: string
   fullName: string
@@ -46,9 +36,6 @@ export type UserDataType = {
   company: string
   title: string
   password_set: boolean
-  iframes: RoleReportsType[]
-  hyperlinks: RoleReportsType[]
-  active_app: boolean
 }
 
 export enum PermanentRoles {
@@ -64,7 +51,6 @@ export type AuthValuesType = {
   isAdmin: boolean
   isSuperAdmin: boolean
   canRefresh: boolean
-  canExport: boolean
   hasAdminPrivileges: boolean
   additionalNavItems: any[]
   setLoading: (value: boolean) => void
@@ -76,7 +62,6 @@ export type AuthValuesType = {
   delete: () => void
   changePassword: (body: { password: string; newPassword: string }) => void
   populateNavigation: (params: { reportId: string; workspaceId: string }) => void
-  defaultLoginActive: boolean
 }
 
 export type Role = {

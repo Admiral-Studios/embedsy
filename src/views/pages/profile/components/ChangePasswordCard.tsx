@@ -36,11 +36,11 @@ const defaultValues = {
 }
 
 const schema = yup.object().shape({
-  currentPassword: yup.string().required('Current Password is required'),
-  newPassword: yup.string().required('New Password is required'),
+  currentPassword: yup.string().required(),
+  newPassword: yup.string().required(),
   confirmNewPassword: yup
     .string()
-    .required('Confirm New Password is required')
+    .required()
     .oneOf([yup.ref('newPassword')], 'Passwords must match')
 })
 
@@ -53,8 +53,6 @@ const ChangePasswordCard = () => {
   })
 
   const { changePassword, user } = useAuth()
-
-  const canManage = user?.can_manage_own_account
 
   // ** Hooks
   const {
@@ -84,20 +82,14 @@ const ChangePasswordCard = () => {
   return (
     <Card>
       <CardHeader title='Change Password' />
-      {!user?.password_set && (
+      {!user?.password_set ? (
         <CardContent>
           <Typography sx={{ fontSize: 14 }} color='warning.main'>
             You can't change your password since you are logged in with your Microsoft account
           </Typography>
         </CardContent>
-      )}
-
-      {!canManage && (
-        <CardContent>
-          <Typography sx={{ fontSize: 14 }} color='warning.main'>
-            You can't change your password because your administrator disabled this feature
-          </Typography>
-        </CardContent>
+      ) : (
+        ''
       )}
       <CardContent>
         <form onSubmit={handleSubmit(onPasswordFormSubmit)}>
@@ -112,7 +104,7 @@ const ChangePasswordCard = () => {
                     fullWidth
                     value={value}
                     onChange={onChange}
-                    disabled={!user?.password_set || !canManage}
+                    disabled={!user?.password_set}
                     label='Current Password'
                     placeholder='············'
                     id='input-current-password'
@@ -152,7 +144,7 @@ const ChangePasswordCard = () => {
                     fullWidth
                     value={value}
                     onChange={onChange}
-                    disabled={!user?.password_set || !canManage}
+                    disabled={!user?.password_set}
                     label='New Password'
                     id='input-new-password'
                     placeholder='············'
@@ -187,7 +179,7 @@ const ChangePasswordCard = () => {
                     fullWidth
                     value={value}
                     onChange={onChange}
-                    disabled={!user?.password_set || !canManage}
+                    disabled={!user?.password_set}
                     placeholder='············'
                     label='Confirm New Password'
                     id='input-confirm-new-password'
@@ -217,7 +209,7 @@ const ChangePasswordCard = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Button variant='contained' type='submit' sx={{ mr: 4 }} disabled={!user?.password_set || !canManage}>
+              <Button variant='contained' type='submit' sx={{ mr: 4 }} disabled={!user?.password_set}>
                 Save Changes
               </Button>
               <Button
@@ -225,7 +217,7 @@ const ChangePasswordCard = () => {
                 variant='tonal'
                 color='secondary'
                 onClick={() => reset()}
-                disabled={!user?.password_set || !canManage}
+                disabled={!user?.password_set}
               >
                 Reset
               </Button>

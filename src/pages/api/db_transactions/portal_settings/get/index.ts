@@ -28,8 +28,6 @@ export const getPortalCapacitySettingsFromDB = async (): Promise<
       capacity_resource_group_name: string | null | undefined
       capacity_subscription_id: string | null | undefined
       capacity_type: string | null | undefined
-      auto_managed_capacity: boolean | null | undefined
-      scheduled_capacity_enabled: boolean | null | undefined
     }
 > => {
   const capacity_name = (await getPortalSettingFromDB(PortalSettingNames.power_bi_capacity_name))?.value_string
@@ -45,22 +43,9 @@ export const getPortalCapacitySettingsFromDB = async (): Promise<
   const capacity_subscription_id = (await getPortalSettingFromDB(PortalSettingNames.power_bi_capacity_subscription_id))
     ?.value_string
 
-  const auto_managed_capacity =
-    (await getPortalSettingFromDB(PortalSettingNames.auto_managed_capacity))?.value_boolean ?? true
-
-  const scheduled_capacity_enabled =
-    (await getPortalSettingFromDB(PortalSettingNames.scheduled_capacity_enabled))?.value_boolean ?? false
-
   const capacity_type = (await getPortalSettingFromDB(PortalSettingNames.power_bi_capacity_type))?.value_string
 
-  return {
-    capacity_name,
-    capacity_resource_group_name,
-    capacity_subscription_id,
-    capacity_type,
-    auto_managed_capacity,
-    scheduled_capacity_enabled
-  }
+  return { capacity_name, capacity_resource_group_name, capacity_subscription_id, capacity_type }
 }
 
 // Endpoint to get a single portal setting

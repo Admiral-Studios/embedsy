@@ -15,6 +15,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     method: 'POST',
     body: formData
   }
+
   const fetchResponse = await fetch(
     `https://login.microsoftonline.com/${process.env.NEXT_PUBLIC_AZURE_TENANT_ID}/oauth2/v2.0/token`,
     requestOptions

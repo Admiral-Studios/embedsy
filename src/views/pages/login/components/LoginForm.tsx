@@ -37,13 +37,6 @@ const LinkStyled = styled(Link)(({ theme }) => ({
   color: `${theme.palette.primary.main} !important`
 }))
 
-const LoginButton = styled(Button)(({ theme }) => ({
-  '&.MuiButtonBase-root.MuiButton-root.MuiButton-contained.MuiButton-containedPrimary.MuiButton-sizeMedium.MuiButton-containedSizeMedium.MuiButton-disableElevation.MuiButton-fullWidth':
-    {
-      color: `${theme.palette.customColors.contrastTextColor} !important`
-    }
-}))
-
 const schema = yup.object().shape({
   email: yup.string().email().required(),
   password: yup.string().min(5).required()
@@ -63,7 +56,7 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false)
 
   // ** Hooks
-  const { login, azureLogin, defaultLoginActive } = useAuth()
+  const auth = useAuth()
   const { hasMsalLoginActive } = useMsalAuth()
   const { instance, inProgress } = useMsal()
   const { appBranding, appPortalSettings } = useSettings()
@@ -93,7 +86,7 @@ const LoginForm = () => {
 
   const onSubmit = async (data: FormData) => {
     const { email, password } = data
-    login({ email, password }, err => {
+    auth.login({ email, password }, err => {
       setError('email', {
         type: 'manual',
         message: err.message
@@ -105,7 +98,7 @@ const LoginForm = () => {
     try {
       const loginResponse = await instance.loginPopup()
       if (loginResponse) {
-        azureLogin({ email: loginResponse.account.username, username: loginResponse.account.name! }, err => {
+        auth.azureLogin({ email: loginResponse.account.username, username: loginResponse.account.name! }, err => {
           setError('email', {
             type: 'manual',
             message: err.message
@@ -126,14 +119,10 @@ const LoginForm = () => {
       />
 
       <Box sx={{ my: 6 }}>
-        {appPortalSettings.landing_page_title && (
-          <Typography variant='h3' sx={{ mb: 1.5 }}>
-            {appPortalSettings.landing_page_title}
-          </Typography>
-        )}
-        {appPortalSettings.landing_page_subtitle && (
-          <Typography sx={{ color: 'text.secondary' }}>{appPortalSettings.landing_page_subtitle}</Typography>
-        )}
+        <Typography variant='h3' sx={{ mb: 1.5 }}>
+          {appPortalSettings.landing_page_title}
+        </Typography>
+        <Typography sx={{ color: 'text.secondary' }}>{appPortalSettings.landing_page_subtitle}</Typography>
       </Box>
       {hasMsalLoginActive && (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -155,87 +144,72 @@ const LoginForm = () => {
           </IconButton>
         </Box>
       )}
-      {defaultLoginActive && (
-        <form noValidate onSubmit={handleSubmit(onSubmit)} autoComplete='off'>
-          <Box sx={{ mb: 4 }}>
-            <Controller
-              name='email'
-              control={control}
-              rules={{ required: true }}
-              render={({ field: { value, onChange, onBlur } }) => (
-                <CustomTextField
-                  fullWidth
-                  label='Email'
-                  value={value}
-                  onBlur={onBlur}
-                  onChange={onChange}
-                  placeholder='Email'
-                  required
-                  error={Boolean(errors.email)}
-                  {...(errors.email && { helperText: errors.email.message })}
-                />
-              )}
-            />
-          </Box>
-          <Box sx={{ mb: 1.5 }}>
-            <Controller
-              name='password'
-              control={control}
-              rules={{ required: true }}
-              render={({ field: { value, onChange, onBlur } }) => (
-                <CustomTextField
-                  fullWidth
-                  value={value}
-                  onBlur={onBlur}
-                  label='Password'
-                  onChange={onChange}
-                  error={Boolean(errors.password)}
-                  {...(errors.password && { helperText: errors.password.message })}
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          edge='end'
-                          onMouseDown={e => e.preventDefault()}
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          <Icon fontSize='1.25rem' icon={showPassword ? 'tabler:eye' : 'tabler:eye-off'} />
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
-              )}
-            />
-          </Box>
-          <Box
-            sx={{
-              mb: 1.75,
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}
-          >
-            <Typography component={LinkStyled} href='/forgot-password'>
-              Forgot Password?
+      <form noValidate onSubmit={handleSubmit(onSubmit)} autoComplete='off'>
+        <Box sx={{ mb: 4 }}>
+          <Controller
+            name='email'
+            control={control}
+            rules={{ required: true }}
+            render={({ field: { value, onChange, onBlur } }) => (
+              <CustomTextField
+                fullWidth
+                label='Email'
+                value={value}
+                onBlur={onBlur}
+                onChange={onChange}
+                placeholder='Email'
+                required
+                error={Boolean(errors.email)}
+                {...(errors.email && { helperText: errors.email.message })}
+              />
+            )}
+          />
+        </Box>
+        <Box sx={{ mb: 1.5 }}>
+          <Controller
+            name='password'
+            control={control}
+            rules={{ required: true }}
+            render={({ field: { value, onChange, onBlur } }) => (
+              <CustomTextField
+                fullWidth
+                value={value}
+                onBlur={onBlur}
+                label='Password'
+                onChange={onChange}
+                error={Boolean(errors.password)}
+                {...(errors.password && { helperText: errors.password.message })}
+                type={showPassword ? 'text' : 'password'}
+                required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position='end'>
+                      <IconButton
+                        edge='end'
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        <Icon fontSize='1.25rem' icon={showPassword ? 'tabler:eye' : 'tabler:eye-off'} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+            )}
+          />
+        </Box>
+        <Button fullWidth type='submit' variant='contained' sx={{ mb: 4 }}>
+          Login
+        </Button>
+        {appPortalSettings.landing_page_show_create_account && (
+          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Typography sx={{ color: 'text.secondary', mr: 2 }}>New on our platform?</Typography>
+            <Typography href='/register' component={LinkStyled}>
+              Create an account
             </Typography>
           </Box>
-          <LoginButton fullWidth type='submit' variant='contained' sx={{ mb: 4, mt: 2 }}>
-            Login
-          </LoginButton>
-          {appPortalSettings.landing_page_show_create_account && (
-            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <Typography sx={{ color: 'text.secondary', mr: 2 }}>New on our platform?</Typography>
-              <Typography href='/register' component={LinkStyled}>
-                Create an account
-              </Typography>
-            </Box>
-          )}
-        </form>
-      )}
+        )}
+      </form>
     </Box>
   )
 }

@@ -5,7 +5,6 @@ import { AvailableWorkspaceAndReports } from './types'
 import { useAdminRoles } from 'src/hooks/useAdminRoles'
 import { INavItem } from 'src/navigation/types/types'
 import { useAuth } from 'src/hooks/useAuth'
-import { preloadPowerBI } from 'src/utils/powerbi/preloadPBI'
 
 type ReportPagesContextProps = {
   pages: pbi.Page[] | undefined
@@ -59,21 +58,16 @@ export const ContextPagesProvider: React.FC<ReportPageContextProviderProps> = ({
   }
 
   const getReportName = async (workspaceId: string, reportId: string) => {
-    if (!workspaceId || !reportId) {
-      return null
-    }
-
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/get_report_by_id`, {
         params: { reportId, workspaceId }
       })
-      const { name, reportType } = response.data
+      const { name } = response.data
 
-      return { name, id: reportId, reportType }
+      return { name, id: reportId }
     } catch (error) {
       console.error('Error fetching report name:', error)
-
-      return null
+      throw error
     }
   }
 
@@ -100,7 +94,7 @@ export const ContextPagesProvider: React.FC<ReportPageContextProviderProps> = ({
       const names = await Promise.all(
         item.reports.map(async id => {
           const reportNameData = await getReportName(workspaceId, id)
-          if (reportNameData && (!canViewRoles || viewAsCustomRole === null || availableReportIds.includes(id))) {
+          if (!canViewRoles || viewAsCustomRole === null || availableReportIds.includes(id)) {
             return reportNameData
           }
 
@@ -108,18 +102,15 @@ export const ContextPagesProvider: React.FC<ReportPageContextProviderProps> = ({
         })
       ).then(results => results.filter(Boolean))
 
-      if (names.length > 0) {
-        reportsList.push({
-          workspaceId,
-          reports: names.map(report => ({
-            name: report?.name,
-            reportId: report?.id,
-            children: [],
-            previewPages: item.previewPagesReports.includes(report?.id || ''),
-            pageType: report?.reportType
-          }))
-        })
-      }
+      reportsList.push({
+        workspaceId,
+        reports: names.map(report => ({
+          name: report?.name,
+          reportId: report?.id,
+          children: [],
+          previewPages: item.previewPagesReports.includes(report?.id || '')
+        }))
+      })
     }
 
     if (user) {
@@ -143,23 +134,6 @@ export const ContextPagesProvider: React.FC<ReportPageContextProviderProps> = ({
       )
     }
 
-    if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        const preloadAllReports = async () => {
-          for (const workspace of reportsList) {
-            for (const report of workspace.reports) {
-              try {
-                await preloadPowerBI(workspace.workspaceId, report.reportId!)
-              } catch (error) {
-                console.error('Error preloading report:', error)
-              }
-            }
-          }
-        }
-        preloadAllReports()
-      }, 2000)
-    }
-
     return reportsList
   }
 
@@ -168,8 +142,8 @@ export const ContextPagesProvider: React.FC<ReportPageContextProviderProps> = ({
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_URL}/api/powerbi/report_pages?reportId=${reportId}&workspaceId=${workspaceId}`
       )
-
-      return response.data
+      
+return response.data
     } catch (error) {
       console.error(error)
     }

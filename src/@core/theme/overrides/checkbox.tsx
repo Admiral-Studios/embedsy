@@ -15,8 +15,8 @@ const CheckedIcon = () => {
       />
       <path
         strokeWidth='0.3'
-        fill={theme.palette.customColors.contrastTextColor}
-        stroke={theme.palette.customColors.contrastTextColor}
+        fill={theme.palette.common.white}
+        stroke={theme.palette.common.white}
         d='M8.63616 11.5663L8.53426 11.472L8.43235 11.5663L7.54946 12.3837L7.43057 12.4938L7.54946 12.6039L10.4885 15.3248L10.5904 15.4191L10.6923 15.3248L16.7533 9.71358L16.8722 9.60351L16.7533 9.49344L15.8704 8.67606L15.7685 8.58172L15.6666 8.67606L10.5904 13.3756L8.63616 11.5663Z'
       />
     </svg>

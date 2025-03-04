@@ -29,7 +29,7 @@ const StringSetting = ({ label = '', name, form, ...props }: StringSettingProps)
       fullWidth
       label={label || settingToLabel(name)}
       placeholder={settingToLabel(name)}
-      value={field.value || ''}
+      value={field.value}
       onChange={field.onChange}
       onBlur={field.onBlur}
       error={!!errors?.[name]}

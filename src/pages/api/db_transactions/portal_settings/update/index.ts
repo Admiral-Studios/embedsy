@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import axios from 'axios'
 
 // ** Utils
 import ExecuteQuery from 'src/utils/db'
@@ -16,17 +15,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!settings?.length) {
       return res.status(400).json({ message: 'No settings provided' })
-    }
-
-    const trialCapacitySetting = settings.find((s: PortalSetting) => s.setting === 'power_bi_trial_capacity')
-    if (trialCapacitySetting?.value_boolean) {
-      try {
-        await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/capacity/manage`, {
-          action: 'suspend'
-        })
-      } catch (error) {
-        console.error('Failed to suspend capacity:', error)
-      }
     }
 
     const updatePromises = settings.map(async (item: PortalSetting) => {
@@ -76,15 +64,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     const updatedSettings = await Promise.all(updatePromises)
-
-    const capacitySettingsUpdated = settings.some(
-      (setting: PortalSetting) =>
-        setting.setting === 'scheduled_capacity_enabled' || setting.setting === 'auto_managed_capacity'
-    )
-
-    if (capacitySettingsUpdated) {
-      await fetch(`${process.env.NEXT_PUBLIC_URL}/api/cron/setup`)
-    }
 
     res.status(200).json(updatedSettings)
   } catch (error) {

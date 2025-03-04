@@ -1,0 +1,76 @@
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  nodeVersion: '18.x'
+
+steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '$(nodeVersion)'
+    displayName: 'Install Node.js'
+
+  - script: |
+      echo "Cleaning npm cache..."
+      rm -f yarn.lock
+      echo "Installing dependencies using NPM"
+      npm install
+    displayName: 'Prepare & install dependencies with NPM'
+
+  - script: |
+      echo "Building the Next.js application..."
+      npm run build
+      mv .next/server .next/standalone/.next/server
+      mv .next/static .next/standalone/.next/static
+      mv public .next/standalone/public
+      echo "Removing everything except .next folder..."
+      find . -maxdepth 1 ! -name '.next' ! -name '.' ! -name '..' -exec rm -rf {} +
+    displayName: 'Build Embedsy App'
+    env:
+      AZURE_APP_SERVICE_NAME: $(AZURE_APP_SERVICE_NAME)
+      AZURE_SUBSCRIPTION_SERVICE_CONNECTION_NAME: $(AZURE_SUBSCRIPTION_SERVICE_CONNECTION_NAME)
+      NEXT_PUBLIC_APP_NAME: $(NEXT_PUBLIC_APP_NAME)
+      NEXT_PUBLIC_AZURE_APP_ID: $(NEXT_PUBLIC_AZURE_APP_ID)
+      NEXT_PUBLIC_AZURE_TENANT_ID: $(NEXT_PUBLIC_AZURE_TENANT_ID)
+      NEXT_PUBLIC_BRAND_NAME: $(NEXT_PUBLIC_BRAND_NAME)
+      NEXT_PUBLIC_DB_HOST: $(NEXT_PUBLIC_DB_HOST)
+      NEXT_PUBLIC_DB_PASS: $(NEXT_PUBLIC_DB_PASS)
+      NEXT_PUBLIC_DB_USER: $(NEXT_PUBLIC_DB_USER)
+      NEXT_PUBLIC_DN_NAME: $(NEXT_PUBLIC_DN_NAME)
+      NEXT_PUBLIC_FAVICON_PATH: $(NEXT_PUBLIC_FAVICON_PATH)
+      NEXT_PUBLIC_FAVICON_WIDTH: $(NEXT_PUBLIC_FAVICON_WIDTH)
+      NEXT_PUBLIC_JWT_SECRET: $(NEXT_PUBLIC_JWT_SECRET)
+      NEXT_PUBLIC_LOGIN_IMAGE_PATH: $(NEXT_PUBLIC_LOGIN_IMAGE_PATH)
+      NEXT_PUBLIC_LOGIN_MESSAGE: $(NEXT_PUBLIC_LOGIN_MESSAGE)
+      NEXT_PUBLIC_REGISTER_IMAGE_PATH: $(NEXT_PUBLIC_REGISTER_IMAGE_PATH)
+      NEXT_PUBLIC_MAIN_COLOR: $(NEXT_PUBLIC_MAIN_COLOR)
+      NEXT_PUBLIC_MAIN_COLOR_DARK: $(NEXT_PUBLIC_MAIN_COLOR_DARK)
+      NEXT_PUBLIC_MAIN_COLOR_LIGHTER: $(NEXT_PUBLIC_MAIN_COLOR_LIGHTER)
+      NEXT_PUBLIC_MAIN_LOGO_PATH: $(NEXT_PUBLIC_MAIN_LOGO_PATH)
+      NEXT_PUBLIC_MAIN_LOGO_WIDTH: $(NEXT_PUBLIC_MAIN_LOGO_WIDTH)
+      NEXT_PUBLIC_META_DESCRIPTION: $(NEXT_PUBLIC_META_DESCRIPTION)
+      NEXT_PUBLIC_META_KEYWORDS: $(NEXT_PUBLIC_META_KEYWORDS)
+      NEXT_PUBLIC_URL: $(NEXT_PUBLIC_URL)
+      NEXT_PUBLIC_AZURE_ACCOUNT_NAME: $(NEXT_PUBLIC_AZURE_ACCOUNT_NAME)
+      NEXT_PUBLIC_AZURE_CONTAINER_NAME: $(NEXT_PUBLIC_AZURE_CONTAINER_NAME)
+      NEXT_PUBLIC_AZURE_STORAGE_CONNECTION_STRING: $(NEXT_PUBLIC_AZURE_STORAGE_CONNECTION_STRING)
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(Build.SourcesDirectory)/.next'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/build.zip'
+      replaceExistingArchive: true
+    displayName: 'Archiving build artifacts'
+
+  - publish: $(Build.ArtifactStagingDirectory)/build.zip
+    artifact: drop
+
+  - task: AzureWebApp@1
+    inputs:
+      azureSubscription: '$(AZURE_SUBSCRIPTION_SERVICE_CONNECTION_NAME)'
+      appName: '$(AZURE_APP_SERVICE_NAME)'
+      appType: webAppLinux
+      runtimeStack: 'NODE|18-lts'
+      package: '$(Build.ArtifactStagingDirectory)/build.zip'
+    displayName: 'Deploy to Azure'

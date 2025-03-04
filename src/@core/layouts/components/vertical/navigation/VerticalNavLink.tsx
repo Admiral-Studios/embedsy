@@ -28,7 +28,6 @@ import CanViewNavLink from 'src/layouts/components/acl/CanViewNavLink'
 
 // ** Util Imports
 import { hexToRGBA } from 'src/@core/utils/hex-to-rgba'
-import { PageTypesEnum } from 'src/enums/pageTypes'
 
 interface Props {
   parent?: boolean
@@ -127,13 +126,9 @@ const VerticalNavLink = ({
           href={item.path === undefined ? '/' : `${item.path}`}
           {...(item.openInNewTab ? { target: '_blank' } : null)}
           onClick={e => {
-            if (item.type === PageTypesEnum.Hyperlink) {
+            if (item.path === undefined) {
               e.preventDefault()
-              if (item.openInNewTab) {
-                window.open(item.path, '_blank')
-              } else {
-                window.location.href = item.path || ''
-              }
+              e.stopPropagation()
             }
             if (navVisible) {
               toggleNavVisibility()

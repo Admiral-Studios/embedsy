@@ -168,7 +168,7 @@ const NotificationDropdown = (props: Props) => {
 
   return (
     <Fragment>
-      <IconButton color='inherit' onClick={handleDropdownOpen}>
+      <IconButton color='inherit' aria-haspopup='true' onClick={handleDropdownOpen} aria-controls='customized-menu'>
         <Badge
           color='error'
           variant='dot'

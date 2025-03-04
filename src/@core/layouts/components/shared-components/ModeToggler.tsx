@@ -1,5 +1,5 @@
 // ** MUI Imports
-import { Box, MenuItem, MenuItemProps, styled } from '@mui/material'
+import { Box, MenuItemProps, styled } from '@mui/material'
 
 // ** Icon Imports
 import Icon from 'src/@core/components/icon'
@@ -13,10 +13,14 @@ interface Props {
   saveSettings: (values: Settings) => void
 }
 
-const MenuItemStyled = styled(MenuItem)<MenuItemProps>(({ theme }) => ({
-  '&:hover .MuiBox-root, &:hover .MuiBox-root svg': {
-    color: theme.palette.primary.main
-  }
+const MenuItemStyled = styled(Box)<MenuItemProps>(({ theme }) => ({
+  margin: 0,
+  '&:hover': {
+    cursor: 'pointer',
+    backgroundColor: `${theme.palette.customColors.trackBg}`,
+    borderRadius: 6
+  },
+  transition: 'background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms'
 }))
 
 const styles = {

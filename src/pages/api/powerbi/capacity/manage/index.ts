@@ -44,8 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       !capacityDetails.capacity_type ||
       !capacityDetails.capacity_name ||
       !capacityDetails.capacity_resource_group_name ||
-      !capacityDetails.capacity_subscription_id ||
-      !capacityDetails.auto_managed_capacity
+      !capacityDetails.capacity_subscription_id
     ) {
       return res.status(200).json({ state: 'Unavailable' })
     }
@@ -60,29 +59,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'POST') {
       if (req.body.action === 'resume') {
-        if (currentState === 'Resuming' || currentState === 'Pausing') {
-          return res.status(200).json({ state: currentState, newState: currentState })
-        }
-
-        if (currentState !== 'Resumed' && currentState !== 'Active') {
+        if (currentState !== 'Resumed' && currentState !== 'Succeeded') {
           await manageCapacity('resume', token, capacityDetails)
 
-          return res.status(200).json({
-            message: 'Capacity resumed successfully',
-            newState: 'Active'
-          })
+          return res.status(200).json({ message: 'Capacity resumed successfully' })
         } else {
           return res.status(200).json({ state: currentState })
         }
       } else if (req.body.action === 'suspend') {
-        if (currentState === 'Pausing' || currentState === 'Resuming') {
-          return res.status(200).json({ state: currentState, newState: currentState })
-        }
-
         if (currentState !== 'Paused') {
           await manageCapacity('suspend', token, capacityDetails)
 
-          return res.status(200).json({ message: 'Capacity suspended successfully', newState: 'Paused' })
+          return res.status(200).json({ message: 'Capacity suspended successfully' })
         } else {
           return res.status(200).json({ state: currentState })
         }

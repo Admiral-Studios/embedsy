@@ -25,9 +25,6 @@ import HorizontalAppBarContent from './components/horizontal/AppBarContent'
 import { useSettings } from 'src/@core/hooks/useSettings'
 import AppBrand from './AppBrand'
 import { ReportPagesContext } from 'src/context/ReportPagesContext'
-import InactivityWarningModal from 'src/components/shared/InactivityWarningModal'
-import { SessionContext } from 'src/context/SessionContext'
-import { useAuth } from 'src/hooks/useAuth'
 
 interface Props {
   children: ReactNode
@@ -38,9 +35,6 @@ const UserLayout = ({ children, contentHeightFixed }: Props) => {
   // ** Hooks
   const { settings, appPortalSettings, saveSettings } = useSettings()
   const { navItems } = useContext(ReportPagesContext) || {}
-  const { isWarningModalOpen, acknowledgeWarning, isInactiveBeyondCapacityThreshold } = useContext(SessionContext)
-
-  const { user } = useAuth()
 
   const [verticalMenuItems, setVerticalItems] = useState<any[]>(navItems!)
   const [horizontalMenuItems, setHorizontalItems] = useState<any[]>(navItems!)
@@ -64,63 +58,59 @@ const UserLayout = ({ children, contentHeightFixed }: Props) => {
   }
 
   useEffect(() => {
-    if (navItems && user) {
-      const verticalMenuItems = VerticalNavItems(navItems!, user.iframes, user.hyperlinks, appPortalSettings)
+    if (navItems) {
+      const verticalMenuItems = VerticalNavItems(navItems!, appPortalSettings)
       setVerticalItems(verticalMenuItems)
 
-      const horizontalMenuItems = HorizontalNavItems(navItems!, user.iframes, user.hyperlinks, appPortalSettings)
+      const horizontalMenuItems = HorizontalNavItems(navItems!, appPortalSettings)
       setHorizontalItems(horizontalMenuItems)
     }
-  }, [navItems, appPortalSettings, user])
+  }, [navItems, appPortalSettings])
 
   return (
-    <>
-      <Layout
-        hidden={hidden}
-        settings={settings}
-        saveSettings={saveSettings}
-        contentHeightFixed={contentHeightFixed}
-        verticalLayoutProps={{
-          navMenu: {
-            navItems: verticalMenuItems,
-            branding: props => <AppBrand {...props} />
+    <Layout
+      hidden={hidden}
+      settings={settings}
+      saveSettings={saveSettings}
+      contentHeightFixed={contentHeightFixed}
+      verticalLayoutProps={{
+        navMenu: {
+          navItems: verticalMenuItems,
+          branding: props => <AppBrand {...props} />
 
-            // Uncomment the below line when using server-side menu in vertical layout and comment the above line
-            // navItems: verticalMenuItems
+          // Uncomment the below line when using server-side menu in vertical layout and comment the above line
+          // navItems: verticalMenuItems
+        },
+        appBar: {
+          content: props => (
+            <VerticalAppBarContent
+              hidden={hidden}
+              settings={settings}
+              saveSettings={saveSettings}
+              toggleNavVisibility={props.toggleNavVisibility}
+            />
+          )
+        }
+      }}
+      {...(settings.layout === 'horizontal' && {
+        horizontalLayoutProps: {
+          navMenu: {
+            navItems: horizontalMenuItems
+
+            // Uncomment the below line when using server-side menu in horizontal layout and comment the above line
+            // navItems: horizontalMenuItems
           },
           appBar: {
-            content: props => (
-              <VerticalAppBarContent
-                hidden={hidden}
-                settings={settings}
-                saveSettings={saveSettings}
-                toggleNavVisibility={props.toggleNavVisibility}
-              />
-            )
+            content: () => <HorizontalAppBarContent settings={settings} saveSettings={saveSettings} />
           }
-        }}
-        {...(settings.layout === 'horizontal' && {
-          horizontalLayoutProps: {
-            navMenu: {
-              navItems: horizontalMenuItems
-
-              // Uncomment the below line when using server-side menu in horizontal layout and comment the above line
-              // navItems: horizontalMenuItems
-            },
-            appBar: {
-              content: () => <HorizontalAppBarContent settings={settings} saveSettings={saveSettings} />
-            }
-          }
-        })}
-      >
-        {children}
-      </Layout>
-      <InactivityWarningModal
-        open={isWarningModalOpen}
-        isInactiveBeyondThreshold={isInactiveBeyondCapacityThreshold}
-        onAcknowledge={acknowledgeWarning}
-      />
-    </>
+        }
+      })}
+      footerProps={{
+        content: () => `© 2024, ${process.env.NEXT_PUBLIC_BRAND_NAME ? process.env.NEXT_PUBLIC_BRAND_NAME : ''}`
+      }}
+    >
+      {children}
+    </Layout>
   )
 }
 
