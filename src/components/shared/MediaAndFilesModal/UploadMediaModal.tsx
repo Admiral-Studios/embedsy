@@ -169,7 +169,7 @@ const UploadMediaModal = ({ open, handleClose, selectedFolder, onUploadSuccess }
   }, [files, selectedFolder, onUploadSuccess])
 
   return (
-    <CustomModal open={open} handleClose={handleClose} customwidth={500} title='Upload Media Files'>
+    <CustomModal open={open} handleClose={handleClose} customWidth={500} title='Upload Media Files'>
       {files.length > 0 && (
         <Box sx={{ mt: 2, height: '250px' }}>
           <Carousel>

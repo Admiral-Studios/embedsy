@@ -1,5 +1,5 @@
 // ** React Imports
-import { useState, SyntheticEvent, Fragment, useMemo } from 'react'
+import { useState, SyntheticEvent, Fragment } from 'react'
 
 // ** Next Import
 import { useRouter } from 'next/router'
@@ -22,10 +22,11 @@ import { useAuth } from 'src/hooks/useAuth'
 // ** Type Imports
 import { Settings } from 'src/@core/context/settingsContext'
 import Link from 'next/link'
+import Switch from 'react-switch'
+import { useSettings } from 'src/@core/hooks/useSettings'
 import ModeToggler from './ModeToggler'
 import AdminRoleDropdown from 'src/layouts/components/shared/AdminRoleDropdown'
 import { useAdminRoles } from 'src/hooks/useAdminRoles'
-import ExportReportButton from './ExportReportButton'
 
 interface Props {
   settings: Settings
@@ -47,21 +48,6 @@ const MenuItemStyled = styled(MenuItem)<MenuItemProps>(({ theme }) => ({
   }
 }))
 
-const styles = {
-  px: 4,
-  py: 1.75,
-  width: '100%',
-  display: 'flex',
-  alignItems: 'center',
-  color: 'text.primary',
-  textDecoration: 'none',
-  '& svg': {
-    mr: 2.5,
-    fontSize: '1.5rem',
-    color: 'text.secondary'
-  }
-}
-
 const UserDropdown = (props: Props) => {
   // ** Props
   const { settings, saveSettings } = props
@@ -72,30 +58,12 @@ const UserDropdown = (props: Props) => {
 
   // ** Hooks
   const router = useRouter()
-  const { logout, user, hasAdminPrivileges, canRefresh, canExport } = useAuth()
+  const { logout, user, hasAdminPrivileges, canRefresh } = useAuth()
 
   // ** Vars
   const { direction } = settings
 
-  const isVisibleExportButton = router.query.workspaceId && router.query.reportId && canExport
-
-  const { workspaceId, reportId, datasetId, rowLevelRole } = useMemo(() => {
-    const workspaceIndex =
-      typeof router.query.workspaceId === 'string' && user
-        ? user.workspaces?.findIndex(workspace => workspace.workspaceID === router.query.workspaceId)
-        : 0
-    const reportIndex =
-      typeof router.query.reportId === 'string' && user && workspaceIndex >= 0
-        ? user.workspaces?.[workspaceIndex].reports.indexOf(router.query.reportId as string)
-        : 0
-
-    return {
-      workspaceId: router.query.workspaceId as string,
-      reportId: router.query.reportId as string,
-      datasetId: user?.workspaces?.[workspaceIndex]?.datasets[reportIndex],
-      rowLevelRole: user?.workspaces?.[workspaceIndex]?.rowLevelRoles[reportIndex]
-    }
-  }, [router.query.workspaceId, router.query.reportId, user])
+  const { powerBIEmbedCapacityActive, changeEmbedCapacity, powerBICapacityExists } = useSettings()
 
   const handleDropdownOpen = (event: SyntheticEvent) => {
     setAnchorEl(event.currentTarget)
@@ -106,6 +74,21 @@ const UserDropdown = (props: Props) => {
       router.push(url)
     }
     setAnchorEl(null)
+  }
+
+  const styles = {
+    px: 4,
+    py: 1.75,
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    color: 'text.primary',
+    textDecoration: 'none',
+    '& svg': {
+      mr: 2.5,
+      fontSize: '1.5rem',
+      color: 'text.secondary'
+    }
   }
 
   const handleLogout = () => {
@@ -158,28 +141,7 @@ const UserDropdown = (props: Props) => {
         <Box sx={{ px: 1 }}>
           <ModeToggler settings={settings} saveSettings={saveSettings} />
 
-          {isVisibleExportButton && (
-            <ExportReportButton
-              workspaceId={workspaceId}
-              reportId={reportId}
-              onCloseDropdown={() => handleDropdownClose()}
-              email={user?.email}
-              rowLevelRole={rowLevelRole}
-              datasetId={datasetId}
-            />
-          )}
-
           {canViewRoles && <AdminRoleDropdown />}
-          {(canRefresh || hasAdminPrivileges) && (
-            <Link href='/datasets'>
-              <MenuItemStyled sx={{ p: 0 }} onClick={() => handleDropdownClose()}>
-                <Box sx={styles}>
-                  <Icon icon='tabler:database' />
-                  Semantic Models
-                </Box>
-              </MenuItemStyled>
-            </Link>
-          )}
         </Box>
 
         <Divider sx={{ my: theme => `${theme.spacing(2)} !important` }} />
@@ -192,9 +154,17 @@ const UserDropdown = (props: Props) => {
             </Box>
           </MenuItemStyled>
         </Link>
-        {hasAdminPrivileges ? (
+        {canRefresh || hasAdminPrivileges ? (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <Link href='/user-configuration/roles'>
+            <Link href='/integrations'>
+              <MenuItemStyled sx={{ p: 0 }} onClick={() => handleDropdownClose()}>
+                <Box sx={styles}>
+                  <Icon icon='lucide:user-cog' />
+                  Integrations
+                </Box>
+              </MenuItemStyled>
+            </Link>
+            <Link href='/configuration'>
               <MenuItemStyled sx={{ p: 0 }} onClick={() => handleDropdownClose()}>
                 <Box sx={styles}>
                   <Icon icon='lucide:user-cog' />
@@ -221,6 +191,24 @@ const UserDropdown = (props: Props) => {
                     </Box>
                   </MenuItemStyled>
                 </Link>
+                {powerBICapacityExists && (
+                  <>
+                    <Divider sx={{ my: theme => `${theme.spacing(2)} !important` }} />
+                    <Box sx={{ ...styles, paddingLeft: 6, gap: 2 }}>
+                      <Switch
+                        height={16.8}
+                        width={33.6}
+                        handleDiameter={12}
+                        checked={powerBIEmbedCapacityActive}
+                        onChange={() => changeEmbedCapacity()}
+                        checkedIcon={false}
+                        uncheckedIcon={false}
+                        onColor='#11955f'
+                      />
+                      Embed Capacity
+                    </Box>
+                  </>
+                )}
               </>
             )}
           </div>

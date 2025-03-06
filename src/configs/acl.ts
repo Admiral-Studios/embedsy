@@ -13,15 +13,9 @@ export type ACLObj = {
   subject: string
 }
 
-const memberAbilities = [
-  SubjectTypes.AclPage,
-  SubjectTypes.ReportIdPage,
-  SubjectTypes.IframeIdPage,
-  SubjectTypes.ProfilePage,
-  SubjectTypes.ApplicationStateErrorPage
-]
+const memberAbilities = [SubjectTypes.AclPage, SubjectTypes.ReportIdPage, SubjectTypes.ProfilePage]
 
-const guestAbilities = [SubjectTypes.AclPage, SubjectTypes.ProfilePage, SubjectTypes.ApplicationStateErrorPage]
+const guestAbilities = [SubjectTypes.AclPage, SubjectTypes.ProfilePage]
 
 const canRefreshAbilities = [SubjectTypes.UserConfiguration]
 
@@ -31,7 +25,7 @@ const canRefreshAbilities = [SubjectTypes.UserConfiguration]
  * admin can manage everything and client can just visit ACL page
  */
 // eslint-disable-next-line
-const defineRulesFor = (role: string, _: string, canRefresh?: boolean) => {
+const defineRulesFor = (role: string, subject: string, canRefresh?: boolean) => {
   const { can, rules } = new AbilityBuilder(AppAbility)
 
   switch (role) {

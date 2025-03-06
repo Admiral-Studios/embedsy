@@ -10,11 +10,43 @@ import { PermanentRoles } from 'src/context/types'
 import { useAuth } from 'src/hooks/useAuth'
 import getRoleHumanizedName from 'src/utils/getRoleHumanizedName'
 
+const BoxStyled = styled('div')<MenuItemProps>(({ theme }) => ({
+  margin: 0,
+  '&:hover': {
+    cursor: 'pointer',
+    backgroundColor: theme.palette.customColors.trackBg,
+    borderRadius: 6
+  },
+  transition: 'background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms'
+}))
+
 const MenuItemStyled = styled(MenuItem)<MenuItemProps>(({ theme }) => ({
   '&:hover .MuiBox-root, &:hover .MuiBox-root svg': {
     color: theme.palette.primary.main
   }
 }))
+
+const RoleBoxStyled = styled(Box)<{ isHighlighted: boolean }>(({ isHighlighted, theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  width: '100%',
+  backgroundColor: theme.palette.background.paper,
+  fontWeight: isHighlighted ? 'bold' : 'normal',
+  borderRadius: 6,
+  '& > span': {
+    px: 2,
+    py: 2,
+    display: 'inherit'
+  },
+  '&:hover': {
+    backgroundColor: theme.palette.background.default
+  }
+}))
+
+const RoleSpanStyled = styled('span')({
+  padding: '6px 12px'
+})
 
 const styles = {
   px: 4,
@@ -25,9 +57,9 @@ const styles = {
   color: 'text.primary',
   textDecoration: 'none',
   '& svg': {
-    mr: 2.5,
-    fontSize: '1.5rem',
-    color: 'text.secondary'
+    mr: 1.5,
+    fontSize: '1.6rem',
+    color: 'text.primary'
   }
 }
 
@@ -51,12 +83,10 @@ const AdminRoleDropdown = () => {
 
   return (
     <Fragment>
-      <MenuItemStyled sx={{ p: 0 }} onClick={handleDropdownOpen}>
-        <Box sx={styles}>
-          <Icon icon='tabler:user-circle' />
-          View As Role
-        </Box>
-      </MenuItemStyled>
+      <BoxStyled sx={styles} onClick={handleDropdownOpen}>
+        <Icon icon='tabler:user-circle' />
+        View As Role
+      </BoxStyled>
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -67,20 +97,19 @@ const AdminRoleDropdown = () => {
       >
         {roles
           .filter(role => isSuperAdmin || role.role !== PermanentRoles.super_admin)
-          .map((role: Role, index: number) => {
-            const isHighlighted =
-              (role.role === PermanentRoles.super_admin && isSuperAdmin && !viewAsCustomRole) ||
-              (role.role === PermanentRoles.admin && isAdmin && !viewAsCustomRole) ||
-              role === viewAsCustomRole
-
-            return (
-              <MenuItemStyled key={index} sx={{ p: 0 }} onClick={() => onClickChangeViewAsRole(role)}>
-                <Box sx={{ ...styles, fontWeight: isHighlighted ? 'bold' : 'normal' }}>
-                  {getRoleHumanizedName(role.role)}
-                </Box>
-              </MenuItemStyled>
-            )
-          })}
+          .map((role: Role, index: number) => (
+            <MenuItemStyled key={index} sx={{ p: 0 }} onClick={() => onClickChangeViewAsRole(role)}>
+              <RoleBoxStyled
+                isHighlighted={
+                  (role.role === PermanentRoles.super_admin && isSuperAdmin && !viewAsCustomRole) ||
+                  (role.role === PermanentRoles.admin && isAdmin && !viewAsCustomRole) ||
+                  role === viewAsCustomRole
+                }
+              >
+                <RoleSpanStyled>{getRoleHumanizedName(role.role)}</RoleSpanStyled>
+              </RoleBoxStyled>
+            </MenuItemStyled>
+          ))}
       </Menu>
     </Fragment>
   )

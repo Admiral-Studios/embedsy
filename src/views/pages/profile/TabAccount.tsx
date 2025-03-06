@@ -49,8 +49,6 @@ const schema = yup.object().shape({
 const TabAccount = () => {
   const { user, changeUser, delete: deleteHandler } = useAuth()
 
-  const canManage = user?.can_manage_own_account
-
   // ** State
   const [open, setOpen] = useState<boolean>(false)
   const [userInput, setUserInput] = useState<string>('yes')
@@ -78,7 +76,7 @@ const TabAccount = () => {
     reset,
     setValue,
     formState: { errors, isValid, isDirty }
-  } = useForm({ defaultValues, mode: 'onChange', resolver: yupResolver(schema) as any })
+  } = useForm({ defaultValues, mode: 'onBlur', resolver: yupResolver(schema) as any })
 
   const { field: email } = useController({
     name: 'email',
@@ -220,59 +218,42 @@ const TabAccount = () => {
           </form>
         </Card>
       </Grid>
-      {/* Delete Account Card */}
 
+      {/* Delete Account Card */}
       <Grid item xs={12}>
         <Card>
-          {canManage ? (
-            <>
-              <CardHeader title='Delete Account' />
-
-              <CardContent>
-                <Box sx={{ mb: 4 }}>
-                  <FormControl>
-                    <FormControlLabel
-                      onChange={() => setIsConfirm(prev => !prev)}
-                      label='I confirm my account deactivation'
-                      sx={{ '& .MuiTypography-root': { color: 'text.secondary' } }}
-                      disabled={!canManage}
-                      control={
-                        <Checkbox
-                          checked={isConfirm}
-                          size='small'
-                          name='validation-basic-checkbox'
-                          sx={true ? { color: 'error.main' } : null}
-                        />
-                      }
+          <CardHeader title='Delete Account' />
+          <CardContent>
+            <Box sx={{ mb: 4 }}>
+              <FormControl>
+                <FormControlLabel
+                  onChange={() => setIsConfirm(prev => !prev)}
+                  label='I confirm my account deactivation'
+                  sx={{ '& .MuiTypography-root': { color: 'text.secondary' } }}
+                  control={
+                    <Checkbox
+                      checked={isConfirm}
+                      size='small'
+                      name='validation-basic-checkbox'
+                      sx={true ? { color: 'error.main' } : null}
                     />
+                  }
+                />
 
-                    {false && (
-                      <FormHelperText
-                        id='validation-basic-checkbox'
-                        sx={{ mx: 0, color: 'error.main', fontSize: theme => theme.typography.body2.fontSize }}
-                      >
-                        Please confirm you want to delete account
-                      </FormHelperText>
-                    )}
-                  </FormControl>
-                </Box>
-                <Button
-                  onClick={() => setOpen(true)}
-                  variant='contained'
-                  color='error'
-                  disabled={!isConfirm || !canManage}
-                >
-                  Delete Account
-                </Button>
-              </CardContent>
-            </>
-          ) : (
-            <CardContent>
-              <Typography sx={{ fontSize: 14 }} color='warning.main'>
-                You can't delete this account because your administrator disabled this feature
-              </Typography>
-            </CardContent>
-          )}
+                {false && (
+                  <FormHelperText
+                    id='validation-basic-checkbox'
+                    sx={{ mx: 0, color: 'error.main', fontSize: theme => theme.typography.body2.fontSize }}
+                  >
+                    Please confirm you want to delete account
+                  </FormHelperText>
+                )}
+              </FormControl>
+            </Box>
+            <Button onClick={() => setOpen(true)} variant='contained' color='error' disabled={!isConfirm}>
+              Delete Account
+            </Button>
+          </CardContent>
         </Card>
       </Grid>
 

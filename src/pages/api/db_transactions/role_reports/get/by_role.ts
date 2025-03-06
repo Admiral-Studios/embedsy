@@ -14,19 +14,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const dbResult = await ExecuteQuery(findRoleQuery)
       const [innerArray] = dbResult
 
-      for (let i = 0; i < innerArray.length; i++) {
-        let currentReport = innerArray[i]
-
-        const datasetQuery = `SELECT last_refresh_date, last_refresh_status FROM datasets WHERE dataset_id = '${currentReport.dataset_id}'`
-        const [datasetResult] = await ExecuteQuery(datasetQuery)
-
-        if (datasetResult && datasetResult.length > 0) {
-          currentReport = { ...currentReport, ...datasetResult[0] }
-        }
-
-        innerArray[i] = currentReport
-      }
-
       res.status(200).json(innerArray)
     }
   } catch (error) {

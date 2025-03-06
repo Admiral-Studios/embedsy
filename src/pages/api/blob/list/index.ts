@@ -22,7 +22,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<{ urls?: string
     const urls: string[] = []
 
     for await (const blob of containerClient.listBlobsFlat({ prefix: blobPrefix })) {
-      const url = `https://${process.env.NEXT_PUBLIC_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${process.env.NEXT_PUBLIC_STORAGE_CONTAINER_NAME}/${blob.name}`
+      const url = `https://${process.env.NEXT_PUBLIC_AZURE_ACCOUNT_NAME}.blob.core.windows.net/${process.env.NEXT_PUBLIC_AZURE_CONTAINER_NAME}/${blob.name}`
       urls.push(url)
     }
 

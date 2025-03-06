@@ -25,23 +25,17 @@ const MsalAuthProvider: React.FC<MsalAuthProviderProps> = ({ children }) => {
   const [pca, setPca] = useState<PublicClientApplication | null>(null)
 
   useEffect(() => {
-    const fetchSettings = async () => {
+    const fetchClientId = async () => {
       try {
-        const [clientIdResponse, msalActiveResponse] = await Promise.all([
-          axios.get(
-            `/api/db_transactions/portal_settings/get?setting=${PortalSettingNames.auth_service_principal_client_id}`
-          ),
-          axios.get(`/api/db_transactions/portal_settings/get?setting=${PortalSettingNames.msal_login_active}`)
-        ])
-
-        const clientIdSetting = clientIdResponse.data
-        const msalActiveSetting = msalActiveResponse.data
-
-        if (clientIdSetting?.value_string && msalActiveSetting?.value_boolean) {
+        const response = await axios.get(
+          `/api/db_transactions/portal_settings/get?setting=${PortalSettingNames.auth_service_principal_client_id}`
+        )
+        const setting = response.data
+        if (setting?.value_string) {
           setHasMsalLoginActive(true)
           const config: Configuration = {
             auth: {
-              clientId: clientIdSetting.value_string,
+              clientId: setting.value_string,
               authority: `https://login.microsoftonline.com/${process.env.NEXT_PUBLIC_AZURE_TENANT_ID}`,
               redirectUri: `${process.env.NEXT_PUBLIC_URL}/login/auth-callback`
             },
@@ -55,11 +49,11 @@ const MsalAuthProvider: React.FC<MsalAuthProviderProps> = ({ children }) => {
           setHasMsalLoginActive(false)
         }
       } catch (error) {
-        console.error('Error fetching authentication settings', error)
+        console.error('Error fetching authentication client id', error)
       }
     }
 
-    fetchSettings()
+    fetchClientId()
   }, [])
 
   return (

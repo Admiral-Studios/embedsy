@@ -18,16 +18,14 @@ const FallbackSpinner = ({ sx }: { sx?: BoxProps['sx'] }) => {
       }}
     >
       {customBrandingLoaded && (
-        <>
-          <img
-            src={appBranding?.appLogo || process.env.NEXT_PUBLIC_MAIN_LOGO_PATH || ''}
-            alt={process.env.NEXT_PUBLIC_BRAND_NAME ? process.env.NEXT_PUBLIC_BRAND_NAME : ''}
-            width={appBranding?.main_logo_width || process.env.NEXT_PUBLIC_MAIN_LOGO_WIDTH || '295'}
-          />
-
-          <CircularProgress disableShrink sx={{ mt: 6 }} />
-        </>
+        <img
+          src={appBranding?.appLogo || process.env.NEXT_PUBLIC_MAIN_LOGO_PATH || ''}
+          alt={process.env.NEXT_PUBLIC_BRAND_NAME ? process.env.NEXT_PUBLIC_BRAND_NAME : ''}
+          width={appBranding?.main_logo_width || process.env.NEXT_PUBLIC_MAIN_LOGO_WIDTH || '295'}
+        />
       )}
+
+      <CircularProgress disableShrink sx={{ mt: 6 }} />
     </Box>
   )
 }

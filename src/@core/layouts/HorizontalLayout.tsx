@@ -182,7 +182,7 @@ const HorizontalLayout = (props: LayoutProps) => {
           scrollToTop(props)
         ) : (
           <ScrollToTop className='mui-fixed'>
-            <Fab color='primary' size='small'>
+            <Fab color='primary' size='small' aria-label='scroll back to top'>
               <Icon icon='tabler:arrow-up' />
             </Fab>
           </ScrollToTop>

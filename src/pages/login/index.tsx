@@ -40,15 +40,10 @@ const LoginPage = () => {
 
   // ** Image render
   const leftImageRender = (
-    <LoginImage
-      key='left-image'
-      customBrandingLoaded={customBrandingLoaded}
-      customImage={appBranding?.login_page_image}
-    />
+    <LoginImage customBrandingLoaded={customBrandingLoaded} customImage={appBranding?.login_page_image} />
   )
   const rightImageRender = (
     <LoginImage
-      key='right-image'
       customBrandingLoaded={customBrandingLoaded}
       customImage={appBranding?.login_page_image}
       sx={{ margin: theme => theme.spacing(8, 8, 8, 0) }}
@@ -57,7 +52,7 @@ const LoginPage = () => {
 
   // ** Login form render
   const loginFormRender = (
-    <FormWrapper key='login-form'>
+    <FormWrapper>
       <Box
         sx={{
           p: [6, 12],

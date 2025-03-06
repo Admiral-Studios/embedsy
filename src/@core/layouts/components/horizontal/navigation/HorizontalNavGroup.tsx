@@ -182,6 +182,7 @@ const HorizontalNavGroup = (props: Props) => {
         <ChildWrapper>
           <List component='div' sx={{ py: skin === 'bordered' ? 2.625 : 2.75 }}>
             <ListItem
+              aria-haspopup='true'
               {...(WrapperCondition ? {} : { onMouseEnter: handleGroupOpen })}
               className={clsx('menu-group', { 'Mui-selected': hasActiveChild(item, currentURL) })}
               {...(horizontalMenuToggle === 'click' ? { onClick: handleMenuToggleOnClick } : {})}

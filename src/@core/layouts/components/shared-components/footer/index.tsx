@@ -4,6 +4,9 @@ import Box from '@mui/material/Box'
 // ** Type Import
 import { LayoutProps } from 'src/@core/layouts/types'
 
+// ** Footer Content Component
+import FooterContent from './FooterContent'
+
 interface Props {
   settings: LayoutProps['settings']
   saveSettings: LayoutProps['saveSettings']
@@ -71,7 +74,7 @@ const Footer = (props: Props) => {
           })
         }}
       >
-        {userFooterContent ? userFooterContent(props) : null}
+        {userFooterContent ? userFooterContent(props) : <FooterContent />}
       </Box>
     </Box>
   )

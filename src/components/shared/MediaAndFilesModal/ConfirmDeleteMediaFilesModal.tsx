@@ -96,14 +96,14 @@ const ConfirmDeleteMediaFilesModal = ({
   const getFileName = (url: string) => {
     const nameWithExtension = url.split('/').pop() || ''
     const fileName = nameWithExtension.split('-').slice(0, -1).join('-')
-
-    return fileName
+    
+return fileName
   }
 
   return (
     <CustomModal
       open={open}
-      customwidth={500}
+      customWidth={500}
       handleClose={handleClose}
       title={`Confirm Delete ${type === 'file' ? 'File' : 'Media'}`}
     >

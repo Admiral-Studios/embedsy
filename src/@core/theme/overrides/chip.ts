@@ -16,16 +16,7 @@ const Chip = () => {
           }),
           '&.MuiChip-rounded': {
             borderRadius: 4
-          },
-          ...(ownerState.variant === 'filled' && {
-            color: `${theme.palette.customColors.contrastTextColor} !important`,
-            '& .MuiChip-deleteIcon': {
-              color: `${theme.palette.customColors.contrastTextColor} !important`,
-              '&:hover': {
-                color: `${theme.palette.customColors.contrastTextColor} !important`
-              }
-            }
-          })
+          }
         }),
         outlined: ({ theme }: OwnerStateThemeType) => ({
           '&.MuiChip-colorDefault': {

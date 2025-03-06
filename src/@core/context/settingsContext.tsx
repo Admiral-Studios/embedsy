@@ -1,5 +1,5 @@
 // ** React Imports
-import { createContext, useState, ReactNode, useEffect, useMemo, useCallback } from 'react'
+import { createContext, useState, ReactNode, useEffect, useMemo } from 'react'
 
 // ** MUI Imports
 import { Direction } from '@mui/material'
@@ -63,8 +63,6 @@ export enum PortalSettingNames {
   service_principal_expiry_date = 'service_principal_expiry_date',
   service_principal_client_id = 'service_principal_client_id',
   service_principal_secret = 'service_principal_secret',
-  default_login_active = 'default_login_active',
-  msal_login_active = 'msal_login_active',
   auth_service_principal_client_id = 'auth_service_principal_client_id',
   power_bi_capacity_name = 'power_bi_capacity_name',
   power_bi_capacity_resource_group_name = 'power_bi_capacity_resource_group_name',
@@ -73,11 +71,7 @@ export enum PortalSettingNames {
   power_bi_trial_capacity = 'power_bi_trial_capacity',
   landing_page_title = 'landing_page_title',
   landing_page_subtitle = 'landing_page_subtitle',
-  landing_page_show_create_account = 'landing_page_show_create_account',
-  auto_managed_capacity = 'auto_managed_capacity',
-  scheduled_capacity_enabled = 'scheduled_capacity_enabled',
-  browser_tab_title = 'browser_tab_title',
-  sender_email = 'sender_email'
+  landing_page_show_create_account = 'landing_page_show_create_account'
 }
 
 export type PortalSettingValueType = 'string' | 'date' | 'boolean'
@@ -120,12 +114,6 @@ export type SettingsContextValue = {
   powerBIEmbedCapacityActive: boolean
   changeEmbedCapacity: () => void
   powerBICapacityExists: boolean
-  isCapacityAutoManaged: boolean
-  isCapacityScheduled: boolean
-  capacitySchedules: any[]
-  capacitySchedulesChanged: boolean
-  setCapacitySchedules: (schedules: any[]) => void
-  checkAndAutoManageCapacity: () => Promise<void>
 } & PortalSettingsContextValue
 
 export type PortalSettingsContextValue = {
@@ -219,13 +207,7 @@ const initialSettingsContext = {
   loadingPortalSettings: false,
   getPortalSettings: async () => Promise.resolve([] as PortalSetting[]),
   updatePortalSettings: async () => Promise.resolve(),
-  powerBICapacityExists: false,
-  isCapacityAutoManaged: false,
-  isCapacityScheduled: false,
-  capacitySchedules: [] as any[],
-  setCapacitySchedules: () => null,
-  capacitySchedulesChanged: false,
-  checkAndAutoManageCapacity: async () => Promise.resolve()
+  powerBICapacityExists: false
 }
 export const SettingsContext = createContext<SettingsContextValue>(initialSettingsContext)
 
@@ -246,8 +228,7 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
   const [loadingPortalSettings, setLoadingPortalSettings] = useState<boolean>(
     initialSettingsContext.loadingPortalSettings
   )
-  const [initialCapacitySchedules, setInitialCapacitySchedules] = useState<any[]>([])
-  const [capacitySchedules, setCapacitySchedules] = useState<any[]>([])
+
   const appPortalSettings: AppPortalSettings = useMemo(() => {
     return portalSettings.reduce(
       (acc, item: PortalSetting) => {
@@ -288,37 +269,7 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
     return appPortalSettings?.power_bi_capacity_name ? true : false
   }, [appPortalSettings])
 
-  const isCapacityAutoManaged = useMemo(() => {
-    return appPortalSettings?.auto_managed_capacity === true
-  }, [appPortalSettings])
-
-  const isCapacityScheduled = useMemo(() => {
-    return appPortalSettings?.scheduled_capacity_enabled === true
-  }, [appPortalSettings])
-
-  const capacitySchedulesChanged = useMemo(() => {
-    if (!initialCapacitySchedules || !capacitySchedules) return false
-
-    return JSON.stringify(initialCapacitySchedules) !== JSON.stringify(capacitySchedules)
-  }, [initialCapacitySchedules, capacitySchedules])
-
-  useFavicon(appBranding?.appFavicon, process.env.NEXT_PUBLIC_FAVICON_PATH || '/images/branding/favicon.png')
-
-  useEffect(() => {
-    if (appPortalSettingsLoaded) {
-      getCapacitySchedules()
-    }
-  }, [appPortalSettingsLoaded, isCapacityAutoManaged, isCapacityScheduled])
-
-  useEffect(() => {
-    if (appPortalSettingsLoaded && user?.id && powerBICapacityExists && isCapacityAutoManaged) {
-      const checkCapacity = async () => {
-        await checkAndAutoManageCapacity()
-      }
-
-      checkCapacity()
-    }
-  }, [user?.id, powerBICapacityExists, appPortalSettingsLoaded, isCapacityAutoManaged])
+  useFavicon(appBranding?.appFavicon, process.env.NEXT_PUBLIC_FAVICON_PATH || '')
 
   useEffect(() => {
     const getCustomBranding = async () => {
@@ -337,8 +288,6 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
 
         if (roleCustomBranding && roleCustomBranding.overwrite) {
           setCustomBranding(roleCustomBranding)
-        } else if (!user) {
-          setCustomBranding(null)
         }
       } catch (e) {
         console.error(e)
@@ -350,27 +299,6 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
     getCustomBranding()
   }, [user])
 
-  const getCapacitySchedules = async () => {
-    const response = await axios.get('/api/db_transactions/portal_settings/get/schedules')
-    setInitialCapacitySchedules(response.data)
-    setCapacitySchedules(response.data)
-  }
-
-  const checkAndAutoManageCapacity = async () => {
-    if (!powerBICapacityExists || powerBIEmbedCapacityActive || !isCapacityAutoManaged) return
-
-    try {
-      const { data } = await axios.get('/api/session/get_active_users')
-      const activeUsers = data.activeUsers
-
-      if (activeUsers === 0) {
-        await autoResumePowerBICapacity()
-      }
-    } catch (error) {
-      console.error('Failed to manage capacity:', error)
-    }
-  }
-
   const changeEmbedCapacity = async () => {
     if (powerBIEmbedCapacityActive) {
       await suspendPowerBICapacity()
@@ -379,7 +307,16 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
     }
   }
 
-  const getCapacityDetails = useCallback(async () => {
+  useEffect(() => {
+    if (appPortalSettingsLoaded) {
+      getCapacityDetails()
+      const interval = setInterval(getCapacityDetails, 300000)
+
+      return () => clearInterval(interval)
+    }
+  }, [appPortalSettingsLoaded])
+
+  const getCapacityDetails = async () => {
     if (!powerBICapacityExists) return
 
     try {
@@ -387,15 +324,8 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
       const state = response.data.state
 
       switch (state) {
-        case 'Active':
-        case 'Resumed':
+        case 'Succeeded':
           setPowerBIEmbedCapacityActive(true)
-          break
-        case 'Resuming':
-          setPowerBIEmbedCapacityActive(false)
-          setTimeout(() => {
-            getCapacityDetails()
-          }, 5000)
           break
         case 'Paused':
           setPowerBIEmbedCapacityActive(false)
@@ -411,23 +341,14 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
       setPowerBIEmbedCapacityActive(false)
       console.error(error)
     }
-  }, [powerBICapacityExists])
-
-  useEffect(() => {
-    if (appPortalSettingsLoaded) {
-      getCapacityDetails()
-      const interval = setInterval(getCapacityDetails, 300000)
-
-      return () => clearInterval(interval)
-    }
-  }, [appPortalSettingsLoaded, getCapacityDetails])
+  }
 
   const suspendPowerBICapacity = async () => {
     if (!loadingChangingCapacity && canChangeCapacity) {
+      setPowerBIEmbedCapacityActive(false)
       setLoadingChangingCapacity(true)
       try {
         await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/capacity/suspend`)
-        setPowerBIEmbedCapacityActive(false)
       } catch (error) {
         setPowerBIEmbedCapacityActive(true)
         console.error(error)
@@ -439,10 +360,10 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
 
   const resumePowerBICapacity = async () => {
     if (!loadingChangingCapacity && canChangeCapacity) {
+      setPowerBIEmbedCapacityActive(true)
       setLoadingChangingCapacity(true)
       try {
         await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/capacity/resume`)
-        setPowerBIEmbedCapacityActive(true)
       } catch (error) {
         setPowerBIEmbedCapacityActive(false)
         console.error(error)
@@ -450,37 +371,6 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
         setLoadingChangingCapacity(false)
       }
     }
-  }
-
-  const autoResumePowerBICapacity = async () => {
-    let attempts = 0
-    const maxAttempts = 10
-    const retryInterval = 5000
-
-    const checkCapacityState = async (): Promise<any> => {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/capacity/manage`, {
-        action: 'resume'
-      })
-
-      if (response.data.newState === 'Active' || response.data.newState === 'Resumed') {
-        setPowerBIEmbedCapacityActive(true)
-
-        return true
-      }
-
-      if (response.data.newState === 'Resuming' || response.data.newState === 'Pausing') {
-        attempts++
-        if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, retryInterval))
-
-          return checkCapacityState()
-        }
-      }
-
-      return false
-    }
-
-    await checkCapacityState()
   }
 
   const getPortalSettings: PortalSettingsContextValue['getPortalSettings'] = async () => {
@@ -518,15 +408,6 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
 
     const updatedSettings = (await axios.put(`/api/db_transactions/portal_settings/update`, changedSettings))?.data
 
-    const prevAutoManaged = portalSettings.find(s => s.setting === 'auto_managed_capacity')?.value_boolean
-    const newAutoManaged = updatedSettings?.find(
-      (s: PortalSetting) => s.setting === 'auto_managed_capacity'
-    )?.value_boolean
-
-    if (prevAutoManaged === false && newAutoManaged === true) {
-      await autoResumePowerBICapacity()
-    }
-
     if (updatedSettings?.length) {
       setPortalSettings((prevSettings: PortalSetting[]) => {
         return prevSettings.map(item => {
@@ -535,16 +416,6 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
           return updatedSetting || item
         })
       })
-    }
-
-    if (capacitySchedulesChanged) {
-      await axios.put('/api/db_transactions/portal_settings/update/schedules', capacitySchedules)
-    }
-
-    await getCapacityDetails()
-
-    if (capacitySchedulesChanged) {
-      await getCapacitySchedules()
     }
   }
 
@@ -595,13 +466,7 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
         getPortalSettings,
         updatePortalSettings,
         loadingPortalSettings,
-        powerBICapacityExists,
-        isCapacityAutoManaged,
-        isCapacityScheduled,
-        capacitySchedules,
-        setCapacitySchedules,
-        capacitySchedulesChanged,
-        checkAndAutoManageCapacity
+        powerBICapacityExists
       }}
     >
       {children}

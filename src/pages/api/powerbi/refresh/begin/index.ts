@@ -49,8 +49,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }
   } catch (error: any) {
     console.error('Error refreshing dataset:', error.response?.data || error.message)
-
-    return response.status(error.response?.status || 500).json({ error: 'Failed to refresh dataset' })
+    
+return response.status(error.response?.status || 500).json({ error: 'Failed to refresh dataset' })
   }
 }
 
@@ -88,8 +88,8 @@ async function checkRefreshStatus(
             dbStatus = 'unknown'
           }
           await updateDatasetStatus(workspaceId, datasetId, dbStatus, latestRefresh.startTime)
-
-          return { status: dbStatus, last_refresh_date: latestRefresh.startTime }
+          
+return { status: dbStatus, last_refresh_date: latestRefresh.startTime }
         }
       }
 

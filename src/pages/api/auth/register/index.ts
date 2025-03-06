@@ -1,11 +1,16 @@
+// import jwt from 'jsonwebtoken'
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import bcrypt from 'bcryptjs'
 
 import ExecuteQuery from 'src/utils/db'
-import { PermanentRoles } from 'src/context/types'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
+    const jwtSecret = process.env.NEXT_PUBLIC_JWT_SECRET
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not defined in the environment variables.')
+    }
+
     const { email, user_name, password, company, title, name } = req.body as {
       email: string
       user_name: string
@@ -30,14 +35,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const querySave = `INSERT INTO Users (user_name, email, password_hash, company, name, title, is_verified, created_at, updated_at) VALUES ('${user_name}', '${email}', '${password_hash}', '${company}', '${name}', '${title}', '${true}', '${currentDate}', '${currentDate}');`
     await ExecuteQuery(querySave)
 
-    const getGuestRoleQuery = `SELECT TOP 1 id FROM roles WHERE role = '${PermanentRoles.guest}'`
-    const guestRoleResult = await ExecuteQuery(getGuestRoleQuery)
-
-    if (!guestRoleResult?.length) {
-      return res.status(404).json({ message: 'Guest role not found' })
-    }
-
-    const guestRoleId = guestRoleResult[0][0].id
+    // TODO: Refactor pre-defined Roles in an enum
+    const guestRoleId = 4
 
     const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES ('${email}', ${guestRoleId});`
     await ExecuteQuery(assignRoleQuery)

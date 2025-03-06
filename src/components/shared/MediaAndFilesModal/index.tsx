@@ -173,7 +173,7 @@ const MediaAndFilesModal = ({ open, handleClose }: Props) => {
     <CustomModal
       open={open}
       handleClose={handleClose}
-      customwidth={500}
+      customWidth={500}
       title={`Manage Media & Files ${
         selectedFolder ? `- ${FolderNames[selectedFolder as keyof typeof FolderNames]}` : ''
       }`}

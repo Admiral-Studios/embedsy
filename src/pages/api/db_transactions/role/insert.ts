@@ -4,14 +4,11 @@ import ExecuteQuery from 'src/utils/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
-    const { role, can_refresh, can_export, can_manage_own_account } = req.body
+    const { role, can_refresh } = req.body
 
     if (role) {
       const canRefresh = can_refresh == null ? 0 : can_refresh ? 1 : 0
-      const canManage = can_manage_own_account == null ? 0 : can_manage_own_account ? 1 : 0
-      const canExport = can_export == null ? 0 : can_export ? 1 : 0
-
-      const query = `INSERT INTO roles (role, can_refresh, can_export, can_manage_own_account) VALUES ('${role}', ${canRefresh}, ${canExport}, ${canManage}); SELECT SCOPE_IDENTITY() AS id;`
+      const query = `INSERT INTO roles (role, can_refresh) VALUES ('${role}', ${canRefresh}); SELECT SCOPE_IDENTITY() AS id;`
 
       try {
         const result = await ExecuteQuery(query)
@@ -37,13 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
 
-        res.status(200).json({
-          id: roleId,
-          role,
-          can_refresh: Boolean(canRefresh),
-          can_export: Boolean(canExport),
-          can_manage_own_account: Boolean(canManage)
-        })
+        res.status(200).json({ id: roleId, role, can_refresh: Boolean(canRefresh) })
       } catch (error) {
         console.error('Error inserting role:', error)
         res.status(500).json({ message: 'Failed to insert user role' })

@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken'
 import ExecuteQuery from 'src/utils/db'
 import { serializeCookie } from 'src/utils/cookies'
 import axios from 'axios'
-import { PermanentRoles } from 'src/context/types'
 
 const signToken = (id: number): string => {
   const jwtSecret = process.env.NEXT_PUBLIC_JWT_SECRET
@@ -41,18 +40,6 @@ const currentDate = new Date().toISOString().replace('T', ' ').replace('Z', '')
 const registerNewUser = async (email: string, user_name: string) => {
   const querySave = `INSERT INTO Users (user_name, email, name, is_verified, created_at, updated_at) VALUES ('${user_name}', '${email}', '${user_name}', '${true}', '${currentDate}', '${currentDate}');`
   await ExecuteQuery(querySave)
-
-  const getGuestRoleQuery = `SELECT TOP 1 id FROM roles WHERE role = '${PermanentRoles.guest}'`
-  const guestRoleResult = await ExecuteQuery(getGuestRoleQuery)
-
-  if (!guestRoleResult[0]?.length) {
-    throw new Error('Guest role not found')
-  }
-
-  const guestRoleId = guestRoleResult[0][0].id
-
-  const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES ('${email}', ${guestRoleId});`
-  await ExecuteQuery(assignRoleQuery)
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -76,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     email: user.email
   })
 
-  const { role, role_id, can_refresh, workspaces, iframes, can_manage_own_account, can_export } = data
+  const { role, role_id, can_refresh, workspaces } = data
 
   const token = signToken(user.id)
 
@@ -118,11 +105,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       role: role,
       role_id: role_id,
       can_refresh: can_refresh,
-      can_export: can_export,
-      can_manage_own_account: !!can_manage_own_account,
       custom_role_id: viewAsCustomRole,
       workspaces: workspaces || [],
-      iframes,
       password_set: user.password_hash ? true : false
     }
   })
