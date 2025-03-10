@@ -1,22 +1,30 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { Nango } from '@nangohq/node'
-
-const nango = new Nango({
-  secretKey: process.env.NEXT_PUBLIC_NANGO_SECRET_KEY ? process.env.NEXT_PUBLIC_NANGO_SECRET_KEY : ''
-})
+import { nango } from '.'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
+  const { id, email, connectionId, providerConfigKey } = request.body
+
+  if (connectionId || providerConfigKey) {
+    const result = await nango.getConnection(providerConfigKey, connectionId)
+
+    if (result) return response.status(200).json({ sessionToken: result.connection_config })
+  }
+
+  if (!id || !email) {
+    return response.status(400).json({ message: 'Missing id or email' })
+  }
+
   try {
     const res = await nango.createConnectSession({
       end_user: {
-        id: '160',
-        email: 'vlad@embedsy.io'
+        id: '2',
+        email: 'admiraldeveloper12@gmail.com'
       },
-      allowed_integrations: ['microsoft-teams']
+      allowed_integrations: ['slack']
     })
 
-    return response.status(200).json(res.data.token)
+    return response.status(200).json({ sessionToken: res.data.token })
   } catch (error) {
-    console.log(error)
+    return response.status(500).json({ message: 'Internal server error' })
   }
 }
