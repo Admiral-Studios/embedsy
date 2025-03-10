@@ -1,17 +1,20 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import { nango } from '.'
 
+// const result = await nango.getConnection(providerConfigKey, connectionId)
+
+// if (result) return response.status(200).json({ sessionToken: result.connection_config })
+
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
-  const { id, email, connectionId, providerConfigKey } = request.body
+  const { connectionId, providerConfigKey } = request.body
 
   if (connectionId || providerConfigKey) {
-    const result = await nango.getConnection(providerConfigKey, connectionId)
+    const res = await nango.createReconnectSession({
+      connection_id: connectionId,
+      integration_id: providerConfigKey
+    })
 
-    if (result) return response.status(200).json({ sessionToken: result.connection_config })
-  }
-
-  if (!id || !email) {
-    return response.status(400).json({ message: 'Missing id or email' })
+    return response.status(200).json({ sessionToken: res.data.token })
   }
 
   try {

@@ -2,10 +2,12 @@ import { NextApiRequest, NextApiResponse } from 'next/types'
 import { nango } from '..'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
+  const { connectionId } = request.body
+
   try {
     const records = await nango.listRecords({
       providerConfigKey: 'slack',
-      connectionId: '633e2f64-d180-4825-9d03-30df6eb37a66',
+      connectionId,
       model: 'SlackChannel'
     })
 

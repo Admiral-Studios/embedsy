@@ -5,23 +5,21 @@ import Nango from '@nangohq/frontend'
 
 import { RolesContextProvider } from 'src/context/RolesContext'
 import { SubjectTypes } from 'src/types/acl/subjectTypes'
-import { useAuth } from 'src/hooks/useAuth'
 import axios from 'axios'
 import { Button, Card, CardContent } from '@mui/material'
 import toast from 'react-hot-toast'
 import Cookies from 'js-cookie'
+import SendMessageModal from './_components/SendMessageModal'
 
 const Integrations = () => {
-  const [isSlackConnected, setIsSlackConnected] = useState(false)
-  const { hasAdminPrivileges, user } = useAuth()
+  const [isMessageModal, setIsMessageModal] = useState(false)
   const nango = new Nango()
   const cookies = Cookies.get()
+  const isSlackConnected = cookies?.providerConfigKey === 'slack' || cookies?.connectionId
 
   const getNangoSessionToken = async () => {
     try {
       const response = await axios.post('/api/nango/session_token', {
-        id: user?.id,
-        email: user?.email,
         connectionId: cookies?.connectionId,
         providerConfigKey: cookies?.providerConfigKey
       })
@@ -48,34 +46,9 @@ const Integrations = () => {
           Cookies.set('connectionId', event.payload.connectionId, { path: '/', sameSite: 'Strict' })
           Cookies.set('providerConfigKey', event.payload.providerConfigKey, { path: '/', sameSite: 'Strict' })
           toast.success('Slack connected successfully')
-          setIsSlackConnected(true)
         }
       }
     })
-  }
-
-  const sendMessage = async () => {
-    try {
-      const resp = await axios.post('/api/nango/slack/send_message', {
-        connectionId: cookies?.connectionId,
-        channel: 'test',
-        text: 'test message 1'
-      })
-      console.log(resp.data)
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  const getChannels = async () => {
-    try {
-      const resp = await axios.post('/api/nango/slack/get_channels', {
-        connectionId: cookies?.connectionId
-      })
-      console.log(resp.data)
-    } catch (error) {
-      console.log(error)
-    }
   }
 
   useEffect(() => {
@@ -85,8 +58,6 @@ const Integrations = () => {
   return (
     <RolesContextProvider>
       <Grid container item spacing={6}>
-        {hasAdminPrivileges && <div></div>}
-
         <Grid item xs={12}>
           <Card>
             <CardContent sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -102,11 +73,11 @@ const Integrations = () => {
             </CardContent>
 
             <CardContent sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Button onClick={sendMessage}>Send Message</Button>
-
-              <Button onClick={getChannels}>Get Channels</Button>
+              <Button onClick={() => setIsMessageModal(true)}>Send Message</Button>
             </CardContent>
           </Card>
+
+          <SendMessageModal open={isMessageModal} handleClose={() => setIsMessageModal(false)} />
         </Grid>
       </Grid>
     </RolesContextProvider>
