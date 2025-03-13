@@ -12,15 +12,8 @@ import {
   Select,
   TextField
 } from '@mui/material'
-import axios from 'axios'
-import Cookies from 'js-cookie'
-import { useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
-
-type SlackChannel = {
-  id: string
-  name: string
-}
+import { useState } from 'react'
+import { useSlack } from 'src/hooks/useSlack'
 
 interface SendMessageModalProps {
   open: boolean
@@ -28,50 +21,14 @@ interface SendMessageModalProps {
 }
 
 const SendMessageModal = ({ open, handleClose }: SendMessageModalProps) => {
-  const [isLoading, setIsLoading] = useState(true)
-  const [channels, setChannels] = useState<SlackChannel[]>([])
+  const [text, setText] = useState('')
   const [activeChanelId, setActiveChannelId] = useState('')
-  const [message, setMessage] = useState('')
-  const cookies = Cookies.get()
+  const { sendMessage, isLoading, channels } = useSlack()
 
-  const sendMessage = async () => {
-    try {
-      setIsLoading(true)
-      const resp = await axios.post('/api/nango/slack/send_message', {
-        connectionId: cookies?.connectionId,
-        channel: activeChanelId,
-        text: message
-      })
-
-      if (resp.data.ok) {
-        handleClose()
-        toast.success('Message sent successfully')
-      }
-    } catch (error) {
-      console.log(error)
-      toast.error('Failed to send message')
-    } finally {
-      setIsLoading(false)
-      handleClose()
-    }
+  const handleSendMessage = async () => {
+    await sendMessage(activeChanelId, text)
+    handleClose()
   }
-
-  useEffect(() => {
-    const getChannels = async () => {
-      try {
-        const resp = await axios.post('/api/nango/slack/get_channels', {
-          connectionId: cookies?.connectionId
-        })
-        setChannels(resp.data.channels.records)
-      } catch (error) {
-        console.log(error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    getChannels()
-  }, [])
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth>
@@ -105,8 +62,8 @@ const SendMessageModal = ({ open, handleClose }: SendMessageModalProps) => {
             <TextField
               fullWidth
               margin='dense'
-              value={message}
-              onChange={e => setMessage(e.target.value)}
+              value={text}
+              onChange={e => setText(e.target.value)}
               id='outlined-basic'
               label='Message'
               variant='outlined'
@@ -115,7 +72,7 @@ const SendMessageModal = ({ open, handleClose }: SendMessageModalProps) => {
 
           <DialogActions>
             <Button onClick={handleClose}>Cancel</Button>
-            <Button onClick={sendMessage}>Send</Button>
+            <Button onClick={handleSendMessage}>Send</Button>
           </DialogActions>
         </>
       )}

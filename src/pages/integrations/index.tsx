@@ -1,46 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useContext, useState } from 'react'
 import Grid from '@mui/material/Grid'
 
 import Nango from '@nangohq/frontend'
 
 import { RolesContextProvider } from 'src/context/RolesContext'
 import { SubjectTypes } from 'src/types/acl/subjectTypes'
-import axios from 'axios'
 import { Button, Card, CardContent } from '@mui/material'
 import toast from 'react-hot-toast'
 import Cookies from 'js-cookie'
 import SendMessageModal from './_components/SendMessageModal'
+import { NangoContext } from 'src/context/NangoContext'
 
 const Integrations = () => {
+  const { sessionToken, providerConfigKey } = useContext(NangoContext)
   const [isMessageModal, setIsMessageModal] = useState(false)
-  const nango = new Nango()
-  const cookies = Cookies.get()
-  const isSlackConnected = cookies?.providerConfigKey === 'slack' || cookies?.connectionId
-
-  const getNangoSessionToken = async () => {
-    try {
-      const response = await axios.post('/api/nango/session_token', {
-        connectionId: cookies?.connectionId,
-        providerConfigKey: cookies?.providerConfigKey
-      })
-
-      if (response.status !== 200) {
-        console.error(response)
-        toast.error(response.data.message)
-
-        return
-      }
-
-      return response.data.sessionToken
-    } catch (error) {
-      console.log(error)
-      toast.error('Connection failed, please try again later')
-    }
-  }
+  const nango = new Nango({ connectSessionToken: sessionToken })
+  const isSlackConnected = providerConfigKey === 'slack'
 
   const handleAddSlack = async () => {
     nango.openConnectUI({
-      sessionToken: await getNangoSessionToken(),
+      sessionToken,
       onEvent: event => {
         if (event.type === 'connect') {
           Cookies.set('connectionId', event.payload.connectionId, { path: '/', sameSite: 'Strict' })
@@ -50,10 +29,6 @@ const Integrations = () => {
       }
     })
   }
-
-  useEffect(() => {
-    getNangoSessionToken()
-  }, [])
 
   return (
     <RolesContextProvider>

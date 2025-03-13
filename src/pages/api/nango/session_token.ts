@@ -1,10 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import { nango } from '.'
 
-// const result = await nango.getConnection(providerConfigKey, connectionId)
-
-// if (result) return response.status(200).json({ sessionToken: result.connection_config })
-
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   const { connectionId, providerConfigKey } = request.body
 

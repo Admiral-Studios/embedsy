@@ -65,6 +65,7 @@ import { ContextProvider } from 'src/context/ReportContext'
 import { AdminRolesProvider } from 'src/context/AdminRolesContext'
 import useSocket from 'src/@core/hooks/useSocket'
 import MsalAuthProvider from 'src/context/MsalAuthContext'
+import { NangoProvider } from 'src/context/NangoContext'
 
 // ** Extend App Props with Emotion
 type ExtendedAppProps = AppProps & {
@@ -137,31 +138,33 @@ const App = (props: ExtendedAppProps) => {
         <MsalAuthProvider>
           <AuthProvider>
             <AdminRolesProvider>
-              <SessionProvider>
-                <SettingsProvider {...(setConfig ? { pageSettings: setConfig() } : {})}>
-                  <SettingsConsumer>
-                    {({ settings }) => {
-                      return (
-                        <ThemeComponent settings={settings}>
-                          <Guard authGuard={authGuard} guestGuard={guestGuard}>
-                            <AclGuard aclAbilities={aclAbilities} guestGuard={guestGuard} authGuard={authGuard}>
-                              <ContextPagesProvider>
-                                <ContextProvider>{getLayout(<Component {...pageProps} />)}</ContextProvider>
-                              </ContextPagesProvider>
-                            </AclGuard>
-                          </Guard>
-                          <ReactHotToast>
-                            <Toaster
-                              position={settings.toastPosition}
-                              toastOptions={{ className: 'react-hot-toast' }}
-                            />
-                          </ReactHotToast>
-                        </ThemeComponent>
-                      )
-                    }}
-                  </SettingsConsumer>
-                </SettingsProvider>
-              </SessionProvider>
+              <NangoProvider>
+                <SessionProvider>
+                  <SettingsProvider {...(setConfig ? { pageSettings: setConfig() } : {})}>
+                    <SettingsConsumer>
+                      {({ settings }) => {
+                        return (
+                          <ThemeComponent settings={settings}>
+                            <Guard authGuard={authGuard} guestGuard={guestGuard}>
+                              <AclGuard aclAbilities={aclAbilities} guestGuard={guestGuard} authGuard={authGuard}>
+                                <ContextPagesProvider>
+                                  <ContextProvider>{getLayout(<Component {...pageProps} />)}</ContextProvider>
+                                </ContextPagesProvider>
+                              </AclGuard>
+                            </Guard>
+                            <ReactHotToast>
+                              <Toaster
+                                position={settings.toastPosition}
+                                toastOptions={{ className: 'react-hot-toast' }}
+                              />
+                            </ReactHotToast>
+                          </ThemeComponent>
+                        )
+                      }}
+                    </SettingsConsumer>
+                  </SettingsProvider>
+                </SessionProvider>
+              </NangoProvider>
             </AdminRolesProvider>
           </AuthProvider>
         </MsalAuthProvider>

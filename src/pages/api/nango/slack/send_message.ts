@@ -11,9 +11,9 @@ export default async function handler(request: NextApiRequest, response: NextApi
       text
     })
 
-    console.log(resp?.data)
-
-    return response.status(200).json({ message: 'Message sent' })
+    if (resp && typeof resp === 'object' && 'ok' in resp) {
+      return response.status(200).json({ ok: true, message: 'Message sent successfully' })
+    }
   } catch (error: any) {
     console.log(error.data.error)
 

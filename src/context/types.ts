@@ -80,3 +80,10 @@ export interface ChangedUserData {
   email?: string
   username?: string
 }
+
+export type NangoValuesType = {
+  sessionToken?: string
+  connectionId?: string
+  providerConfigKey?: string
+  integrations?: Array<string>
+}
