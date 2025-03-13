@@ -36,16 +36,27 @@ const Circle = styled('div')<{ color: string }>(({ color }) => ({
 const AppBarContent = (props: Props) => {
   const router = useRouter()
   const { hidden, settings, saveSettings, toggleNavVisibility } = props
-  const { report } = useContext(ReportContext) || {}
+  const { report, fullscreen, iframeLoaded, isFullscreen } = useContext(ReportContext) || {}
   const { canViewRoles } = useAdminRoles()
   const { powerBIEmbedCapacityActive, powerBICapacityExists } = useSettings()
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
-    
-return () => setIsMounted(false)
-  }, [])
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && isFullscreen && fullscreen) {
+        fullscreen()
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+
+    return () => {
+      setIsMounted(false)
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [fullscreen, isFullscreen])
 
   const circleColor = useMemo(() => {
     if (powerBIEmbedCapacityActive) {
@@ -56,7 +67,21 @@ return () => setIsMounted(false)
   }, [powerBIEmbedCapacityActive])
 
   const isDashboardPath = router.pathname.startsWith('/dashboard')
-  const isLoaded = report?.iframeLoaded
+  const isLoaded = iframeLoaded
+
+  const handleFullscreen = () => {
+    if (fullscreen) {
+      fullscreen()
+    }
+
+    if (report) {
+      try {
+        report.fullscreen()
+      } catch (error) {
+        console.error('Error toggling report fullscreen:', error)
+      }
+    }
+  }
 
   return (
     <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -67,7 +92,7 @@ return () => setIsMounted(false)
           </IconButton>
         ) : null}
 
-        {isMounted && isDashboardPath && <ModeFullscreen disabled={!isLoaded} onClick={() => report?.fullscreen()} />}
+        {isMounted && isDashboardPath && <ModeFullscreen disabled={!isLoaded} onClick={handleFullscreen} />}
       </Box>
       <Box className='actions-right' sx={{ display: 'flex', alignItems: 'center' }}>
         {canViewRoles && powerBICapacityExists && (

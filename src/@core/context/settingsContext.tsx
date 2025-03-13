@@ -77,7 +77,8 @@ export enum PortalSettingNames {
   auto_managed_capacity = 'auto_managed_capacity',
   scheduled_capacity_enabled = 'scheduled_capacity_enabled',
   browser_tab_title = 'browser_tab_title',
-  sender_email = 'sender_email'
+  sender_email = 'sender_email',
+  power_bi_snapshot_extension = 'power_bi_snapshot_extension'
 }
 
 export type PortalSettingValueType = 'string' | 'date' | 'boolean'
@@ -324,7 +325,7 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
     const getCustomBranding = async () => {
       try {
         let roleCustomBranding
-        if (user) {
+        if (user && (user.role_id || user.custom_role_id)) {
           const roleIdToUse = user.custom_role_id || user.role_id
           const response = await axios.get('/api/db_transactions/role_branding/get/by_role_id', {
             params: { roleId: roleIdToUse }

@@ -2,19 +2,42 @@ import React, { useState, createContext, ReactNode } from 'react'
 
 import * as pbi from 'powerbi-client'
 
-interface ReportContextProps {
-  report: pbi.Report | undefined
-  setReport: React.Dispatch<React.SetStateAction<pbi.Report | undefined>>
+type ReportContextType = {
+  report: pbi.Report | null
+  setReport: (report: pbi.Report) => void
+  isFullscreen: boolean
+  fullscreen: () => void
+  iframeLoaded: boolean
+  setIframeLoaded: (loaded: boolean) => void
 }
 
-interface ReportContextProviderProps {
+export const ReportContext = createContext<ReportContextType | undefined>(undefined)
+
+type Props = {
   children: ReactNode
 }
 
-export const ReportContext = createContext<ReportContextProps | undefined>(undefined)
+export const ReportProvider = ({ children }: Props) => {
+  const [report, setReport] = useState<pbi.Report | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
 
-export const ContextProvider: React.FC<ReportContextProviderProps> = ({ children }) => {
-  const [report, setReport] = useState<pbi.Report | undefined>(undefined)
+  const handleFullscreen = () => {
+    setIsFullscreen(!isFullscreen)
+  }
 
-  return <ReportContext.Provider value={{ report, setReport }}>{children}</ReportContext.Provider>
+  return (
+    <ReportContext.Provider
+      value={{
+        report,
+        setReport,
+        isFullscreen,
+        fullscreen: handleFullscreen,
+        iframeLoaded,
+        setIframeLoaded
+      }}
+    >
+      {children}
+    </ReportContext.Provider>
+  )
 }

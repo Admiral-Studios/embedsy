@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import axios from 'axios'
 import { CapacityType, CapacityTypeLabel, getCapacityAPIVersion } from 'src/utils/powerbi/powerbiCapacityTypes'
+import { getPortalClientSettingsFromDB } from 'src/pages/api/db_transactions/portal_settings/get'
 
 async function fetchCapacities(subscriptionId: string, token: string): Promise<any[]> {
   const fabricApiVersion = getCapacityAPIVersion(CapacityType.Fabric)
@@ -35,6 +36,12 @@ async function fetchCapacities(subscriptionId: string, token: string): Promise<a
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const { client_id, client_secret } = await getPortalClientSettingsFromDB()
+
+    if (!client_id || !client_secret) {
+      return res.status(204).end()
+    }
+
     const authenticationToken = await axios
       .get(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/auth-token-management`)
       .then(res => res.data.access_token)

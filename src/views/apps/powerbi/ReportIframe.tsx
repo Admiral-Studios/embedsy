@@ -14,6 +14,11 @@ import { usePBITheme } from 'src/hooks/powerbi/usePBITheme'
 import { useSettings } from 'src/@core/hooks/useSettings'
 import { preloadThemes } from 'src/utils/powerbi/preloadPBI'
 import { ReportTypes } from 'src/enums/pageTypes'
+import { exportVisual } from 'src/utils/powerbi/exportVisual'
+import { takeSnapshotCustomCommand } from 'src/utils/powerbi/takeSnapshotCustomCommand'
+import { powerBiConfigSettings } from 'src/configs/powerbi'
+import toast from 'react-hot-toast'
+import VisualModal from 'src/components/shared/Powerbi/VisualModal'
 
 const fetcher = (url: string, email: string, datasetId: string, rowLevelRole: string) =>
   fetch(url, {
@@ -25,7 +30,7 @@ const fetcher = (url: string, email: string, datasetId: string, rowLevelRole: st
   }).then(res => res.json())
 
 const PowerBiIframe = () => {
-  const { setReport, report } = useContext(ReportContext) || {}
+  const { setReport, report, isFullscreen, setIframeLoaded } = useContext(ReportContext) || {}
   const { setReport: setContextReport, initializePagination, setActivePage } = useContext(ReportPagesContext) || {}
   const [isLoaded, setIsLoaded] = useState(false)
   const [isDisplayed, setDisplay] = useState(false)
@@ -33,6 +38,8 @@ const PowerBiIframe = () => {
   const [lightThemeConfig, setLightThemeConfig] = useState(null)
   const [isPageChangingFromReport, setIsPageChangingFromReport] = useState(false)
   const [isThemeInitialized, setIsThemeInitialized] = useState(false)
+  const [visualData, setVisualData] = useState<{ url: any; visualName: string } | null>(null)
+
   const tokenManagerInitialized = useRef(false)
   const currentReportId = useRef<any>('')
   const currentPageRef = useRef<string | undefined>(undefined)
@@ -40,7 +47,9 @@ const PowerBiIframe = () => {
   const { query, push, pathname } = useRouter()
   const { user } = useAuth()
   const theme = useTheme()
-  const { appBranding } = useSettings()
+  const { appBranding, appPortalSettings } = useSettings()
+
+  const isTakeSnapshotEnabled = Boolean(appPortalSettings.power_bi_snapshot_extension)
 
   useEffect(() => {
     const preloadReportThemes = async () => {
@@ -122,7 +131,47 @@ const PowerBiIframe = () => {
         }
       }
 
+      const initializeSnapshotTrigger = async (
+        event: pbi.service.ICustomEvent<{
+          command: string
+          visual: {
+            name: string
+          }
+          page: {
+            name: string
+          }
+        }>
+      ) => {
+        if (event?.detail?.command === 'snapshot') {
+          const exportPromise = exportVisual(
+            workspaceId,
+            reportId,
+            'PNG',
+            event.detail.visual.name,
+            event.detail.page.name
+          )
+
+          const visualData = await toast.promise(exportPromise, {
+            loading: 'Loading snapshot',
+            success: 'Successfully',
+            error: 'Snapshot loading error'
+          })
+
+          setVisualData(visualData)
+        }
+      }
+
       report.on('loaded', initializeTheme)
+
+      report.on<{
+        command: string
+        visual: {
+          name: string
+        }
+        page: {
+          name: string
+        }
+      }>('commandTriggered', initializeSnapshotTrigger)
 
       return () => {
         report.off('loaded', initializeTheme)
@@ -200,7 +249,10 @@ const PowerBiIframe = () => {
 
   const handleLoaded = useCallback(() => {
     setIsLoaded(true)
-  }, [])
+    if (setIframeLoaded) {
+      setIframeLoaded(true)
+    }
+  }, [setIframeLoaded])
 
   const getEmbeddedComponent = useCallback(
     (embeddedReport: any) => {
@@ -208,29 +260,35 @@ const PowerBiIframe = () => {
         if (embeddedReport.config.id !== (report as any)?.config.id) {
           setReport(embeddedReport as pbi.Report)
           setContextReport(embeddedReport as pbi.Report)
+
+          if (isTakeSnapshotEnabled) takeSnapshotCustomCommand(embeddedReport as pbi.Report)
         }
       }
     },
     [setReport, setContextReport, report]
   )
 
-  const powerBiConfig = useMemo(
-    () => ({
+  const powerBiConfig = useMemo(() => {
+    const config: any = {
       type: 'report',
       id: reportId,
       accessToken: data?.reportToken,
       tokenType: models.TokenType.Embed,
+      permissions: models.Permissions.All,
       pageName: query.page ? query.page : undefined,
       theme: {
         themeJson: theme.palette.mode === 'dark' ? darkThemeConfig || {} : lightThemeConfig || {}
       },
+
       settings: {
-        navContentPaneEnabled: false,
+        ...powerBiConfigSettings,
+        navContentPaneEnabled: isFullscreen,
         layoutType: models.LayoutType.Master
       }
-    }),
-    [reportId, data?.reportToken, query.page, theme.palette.mode, darkThemeConfig, lightThemeConfig]
-  )
+    }
+
+    return config
+  }, [reportId, data?.reportToken, query.page, theme.palette.mode, darkThemeConfig, lightThemeConfig, isFullscreen])
 
   if (!data) return null
 
@@ -240,6 +298,13 @@ const PowerBiIframe = () => {
         style={
           !isLoaded || isPageChangingFromReport
             ? {
+                position: isFullscreen ? 'fixed' : 'relative',
+                top: isFullscreen ? 0 : 'auto',
+                left: isFullscreen ? 0 : 'auto',
+                width: isFullscreen ? '100vw' : '100%',
+                height: isFullscreen ? '100vh' : '100%',
+                zIndex: isFullscreen ? 9999 : 'auto',
+                backgroundColor: isFullscreen ? 'rgba(255, 255, 255, 0.9)' : 'transparent',
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
@@ -255,6 +320,7 @@ const PowerBiIframe = () => {
           width={appBranding?.loading_spinner_width || process.env.NEXT_PUBLIC_SPINNER_WIDTH || 100}
         />
       </div>
+
       <div
         style={
           isLoaded && !isPageChangingFromReport
@@ -268,6 +334,18 @@ const PowerBiIframe = () => {
             eventHandlers={
               new Map([
                 ['loaded', handleLoaded],
+                [
+                  'rendered',
+                  (_: any, r: any) => {
+                    if (isTakeSnapshotEnabled) {
+                      const renderExtensions = async () => {
+                        await takeSnapshotCustomCommand(r)
+                      }
+
+                      renderExtensions()
+                    }
+                  }
+                ],
                 [
                   'pageChanged',
                   (event: any) => {
@@ -295,6 +373,8 @@ const PowerBiIframe = () => {
           />
         </div>
       </div>
+
+      <VisualModal visualData={visualData} setVisualData={v => setVisualData(v)} />
     </div>
   )
 }

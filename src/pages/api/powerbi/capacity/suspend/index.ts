@@ -1,12 +1,21 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import axios from 'axios'
-import { getPortalCapacitySettingsFromDB } from 'src/pages/api/db_transactions/portal_settings/get'
+import {
+  getPortalCapacitySettingsFromDB,
+  getPortalClientSettingsFromDB
+} from 'src/pages/api/db_transactions/portal_settings/get'
 import { getCapacityAPIVersion, CapacityType } from 'src/utils/powerbi/powerbiCapacityTypes'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   let authenticationToken = request.body.authenticationToken
 
   if (!authenticationToken) {
+    const { client_id, client_secret } = await getPortalClientSettingsFromDB()
+
+    if (!client_id || !client_secret) {
+      return response.status(200).json({ message: 'Capacity could not be suspended' })
+    }
+
     authenticationToken = await axios
       .get(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/auth-token-management`)
       .then(res => res.data.access_token)

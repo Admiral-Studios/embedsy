@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { createDownloadLink } from '../createDownloadLink'
+import { createBlobDownloadLink } from '../createBlobDownloadLink'
 
 type FileTypes = 'PDF' | 'PPTX' | 'PNG'
 
@@ -40,7 +40,10 @@ export const exportTo = async (
       })
       const { name } = response.data
 
-      createDownloadLink(blob, `${name || 'report'}.${blob.type === 'application/zip' ? 'zip' : type.toLowerCase()}`)
+      return createBlobDownloadLink(
+        blob,
+        `${name || 'report'}.${blob.type === 'application/zip' ? 'zip' : type.toLowerCase()}`
+      )
     } else {
       throw new Error('Export failed')
     }

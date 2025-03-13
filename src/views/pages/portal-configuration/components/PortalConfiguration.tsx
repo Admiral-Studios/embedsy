@@ -63,12 +63,18 @@ const schema = yup.object().shape({
   [PortalSettingNames.main_menu_name]: yup.string().required('Main menu name is required'),
   [PortalSettingNames.browser_tab_title]: yup.string().required('Browser tab title is required'),
   [PortalSettingNames.login_layout]: yup.string().required('Login layout is required'),
-  [PortalSettingNames.service_principal_client_id]: yup.string().required('Service principal client ID is required'),
+  [PortalSettingNames.service_principal_client_id]: yup.string(),
   [PortalSettingNames.auth_service_principal_client_id]: yup.string(),
   [PortalSettingNames.service_principal_expiry_date]: yup
     .date()
-    .required('Service principal expiry date is required')
-    .min(startOfToday(), 'Service principal expiry date must be today or a future date')
+    .when(PortalSettingNames.service_principal_client_id, {
+      is: (val: string) => val && val.length > 0,
+      then: () =>
+        yup
+          .date()
+          .required('Service principal expiry date is required when client ID is provided')
+          .min(startOfToday(), 'Service principal expiry date must be today or a future date')
+    })
     .transform((value, originalValue) => (originalValue ? parseISO(originalValue) : value)),
   [PortalSettingNames.landing_page_title]: yup.string(),
   [PortalSettingNames.landing_page_subtitle]: yup.string(),
@@ -127,6 +133,15 @@ const PortalConfiguration = () => {
 
     if (!values[PortalSettingNames.power_bi_trial_capacity] && !values[PortalSettingNames.power_bi_capacity_name]) {
       toast.error('You must either select the trial capacity, or use a premium capacity.')
+
+      return false
+    }
+
+    if (
+      values[PortalSettingNames.service_principal_client_id] &&
+      !values[PortalSettingNames.service_principal_secret]
+    ) {
+      toast.error('Service Principal Client ID Secret is required when Service Principal Client ID is provided')
 
       return false
     }
@@ -267,6 +282,7 @@ const PortalConfiguration = () => {
                         label='Service Principal Client ID'
                         name={PortalSettingNames.service_principal_client_id}
                         form={form}
+                        required={false}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -276,6 +292,7 @@ const PortalConfiguration = () => {
                         type='password'
                         name={PortalSettingNames.service_principal_secret}
                         form={form}
+                        required={false}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -564,6 +581,27 @@ const PortalConfiguration = () => {
                           />
                         }
                         label='Trial Capacity'
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Divider />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant='h5'>Power BI Extensions</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={Boolean(form.watch(PortalSettingNames.power_bi_snapshot_extension)) || false}
+                            onChange={e => {
+                              form.setValue(PortalSettingNames.power_bi_snapshot_extension, e.target.checked, {
+                                shouldDirty: true
+                              })
+                            }}
+                          />
+                        }
+                        label='Take snapshot command'
                       />
                     </Grid>
                   </>

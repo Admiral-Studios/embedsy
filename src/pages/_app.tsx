@@ -60,7 +60,7 @@ import '../../styles/globals.css'
 
 // * Custom styles
 import '../layouts/styles/powerbi.css'
-import { ContextProvider } from 'src/context/ReportContext'
+import { ReportProvider } from 'src/context/ReportContext'
 import { AdminRolesProvider } from 'src/context/AdminRolesContext'
 
 import MsalAuthProvider from 'src/context/MsalAuthContext'
@@ -106,7 +106,7 @@ const Guard = ({ children, authGuard, guestGuard }: GuardProps) => {
 
 // ** Configure JSS & ClassName
 const App = (props: ExtendedAppProps) => {
-  const { Component, emotionCache = clientSideEmotionCache, pageProps } = props
+  const { Component, pageProps, emotionCache = clientSideEmotionCache } = props
 
   useEffect(() => {
     startActivityCron()
@@ -126,8 +126,8 @@ const App = (props: ExtendedAppProps) => {
   const aclAbilities = Component.acl ?? defaultACLObj
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <CacheProvider value={emotionCache}>
+    <CacheProvider value={emotionCache}>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
         <MsalAuthProvider>
           <AuthProvider>
             <AdminRolesProvider>
@@ -141,7 +141,7 @@ const App = (props: ExtendedAppProps) => {
                           <Guard authGuard={authGuard} guestGuard={guestGuard}>
                             <AclGuard aclAbilities={aclAbilities} guestGuard={guestGuard} authGuard={authGuard}>
                               <ContextPagesProvider>
-                                <ContextProvider>{getLayout(<Component {...pageProps} />)}</ContextProvider>
+                                <ReportProvider>{getLayout(<Component {...pageProps} />)}</ReportProvider>
                               </ContextPagesProvider>
                             </AclGuard>
                           </Guard>
@@ -166,8 +166,8 @@ const App = (props: ExtendedAppProps) => {
             </AdminRolesProvider>
           </AuthProvider>
         </MsalAuthProvider>
-      </CacheProvider>
-    </LocalizationProvider>
+      </LocalizationProvider>
+    </CacheProvider>
   )
 }
 
