@@ -192,6 +192,16 @@ const UserDropdown = (props: Props) => {
             </Box>
           </MenuItemStyled>
         </Link>
+
+        <Link href='/integrations'>
+          <MenuItemStyled sx={{ p: 0 }} onClick={() => handleDropdownClose()}>
+            <Box sx={styles}>
+              <Icon icon='tabler:user-code' />
+              My Integrations
+            </Box>
+          </MenuItemStyled>
+        </Link>
+
         {hasAdminPrivileges ? (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <Link href='/user-configuration/roles'>
