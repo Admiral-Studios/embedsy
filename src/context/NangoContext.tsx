@@ -8,7 +8,9 @@ const defaultProvider: NangoValuesType = {
   sessionToken: '',
   connectionId: '',
   providerConfigKey: '',
-  integrations: []
+  integrations: [],
+  setConnectionId: () => null,
+  setProviderConfigKey: () => null
 }
 
 const NangoContext = createContext(defaultProvider)
@@ -39,7 +41,7 @@ const NangoProvider = ({ children }: Props) => {
       setSessionToken(response.data.sessionToken)
       getIntegrations()
     } catch (error) {
-      console.log(error)
+      console.error(error)
       toast.error('Connection failed, please try again later')
     }
   }
@@ -49,7 +51,7 @@ const NangoProvider = ({ children }: Props) => {
       const response = await axios.get('/api/nango/get_integrations')
       setIntegrations(response.data.integrations)
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 
@@ -69,7 +71,9 @@ const NangoProvider = ({ children }: Props) => {
     sessionToken,
     connectionId,
     providerConfigKey,
-    integrations
+    integrations,
+    setConnectionId,
+    setProviderConfigKey
   }
 
   return <NangoContext.Provider value={values}>{children}</NangoContext.Provider>

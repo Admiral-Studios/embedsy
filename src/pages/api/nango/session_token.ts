@@ -16,7 +16,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
   try {
     const res = await nango.createConnectSession({
       end_user: {
-        id: '2',
+        id: '3',
         email: 'admiraldeveloper12@gmail.com'
       },
       allowed_integrations: ['slack']

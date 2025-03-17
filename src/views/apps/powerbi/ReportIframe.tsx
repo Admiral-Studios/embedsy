@@ -19,6 +19,8 @@ import { takeSnapshotCustomCommand } from 'src/utils/powerbi/takeSnapshotCustomC
 import { powerBiConfigSettings } from 'src/configs/powerbi'
 import toast from 'react-hot-toast'
 import VisualModal from 'src/components/shared/Powerbi/VisualModal'
+import { shareSlackCustomCommand } from 'src/utils/shareSlackCustomCommand'
+import { useSlack } from 'src/hooks/useSlack'
 
 const fetcher = (url: string, email: string, datasetId: string, rowLevelRole: string) =>
   fetch(url, {
@@ -39,6 +41,7 @@ const PowerBiIframe = () => {
   const [isPageChangingFromReport, setIsPageChangingFromReport] = useState(false)
   const [isThemeInitialized, setIsThemeInitialized] = useState(false)
   const [visualData, setVisualData] = useState<{ url: any; visualName: string } | null>(null)
+  const { owner } = useSlack()
 
   const tokenManagerInitialized = useRef(false)
   const currentReportId = useRef<any>('')
@@ -50,6 +53,7 @@ const PowerBiIframe = () => {
   const { appBranding, appPortalSettings } = useSettings()
 
   const isTakeSnapshotEnabled = Boolean(appPortalSettings.power_bi_snapshot_extension)
+  const isSlackShareEnabled = Boolean(owner?.id)
 
   useEffect(() => {
     const preloadReportThemes = async () => {
@@ -159,6 +163,10 @@ const PowerBiIframe = () => {
 
           setVisualData(visualData)
         }
+
+        if (event?.detail?.command === 'shareSlack') {
+          console.log('test')
+        }
       }
 
       report.on('loaded', initializeTheme)
@@ -262,6 +270,7 @@ const PowerBiIframe = () => {
           setContextReport(embeddedReport as pbi.Report)
 
           if (isTakeSnapshotEnabled) takeSnapshotCustomCommand(embeddedReport as pbi.Report)
+          if (isSlackShareEnabled) shareSlackCustomCommand(embeddedReport as pbi.Report)
         }
       }
     },
@@ -337,13 +346,17 @@ const PowerBiIframe = () => {
                 [
                   'rendered',
                   (_: any, r: any) => {
-                    if (isTakeSnapshotEnabled) {
-                      const renderExtensions = async () => {
+                    const renderExtensions = async () => {
+                      if (isTakeSnapshotEnabled) {
                         await takeSnapshotCustomCommand(r)
                       }
 
-                      renderExtensions()
+                      if (isSlackShareEnabled) {
+                        await shareSlackCustomCommand(r)
+                      }
                     }
+
+                    renderExtensions()
                   }
                 ],
                 [

@@ -2,36 +2,46 @@ import axios from 'axios'
 import { useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { NangoContext } from 'src/context/NangoContext'
-
-type SlackChannel = {
-  id: string
-  name: string
-}
+import { SlackChannel, SlackUser } from 'src/types/apps/slackTypes'
 
 export const useSlack = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [channels, setChannels] = useState<SlackChannel[]>([])
+  const [users, setUsers] = useState<SlackUser[]>([])
+  const [owner, setOwner] = useState<SlackUser | null>(null)
   const { connectionId } = useContext(NangoContext)
 
   const getChannels = async () => {
-    if (!connectionId) return
-
     try {
-      setIsLoading(true)
       const resp = await axios.post('/api/nango/slack/get_channels', {
         connectionId
       })
-      setChannels(resp.data.channels.records)
+      setChannels(resp.data.channels)
     } catch (error) {
-      console.log(error)
-    } finally {
-      setIsLoading(false)
+      console.error(error)
     }
   }
 
-  const sendMessage = async (channel: string, text: string) => {
-    if (!connectionId) return
+  const getUsers = async () => {
+    try {
+      const resp = await axios.post('/api/nango/slack/get_users', {
+        connectionId
+      })
+      setUsers(resp.data.users)
+      setOwner(resp.data.users.find((user: any) => user.is_owner) || null)
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
+  const getContacts = async () => {
+    setIsLoading(true)
+    await getChannels()
+    await getUsers()
+    setIsLoading(false)
+  }
+
+  const sendMessage = async (channel: string, text: string) => {
     try {
       setIsLoading(true)
       const resp = await axios.post('/api/nango/slack/send_message', {
@@ -44,7 +54,7 @@ export const useSlack = () => {
         toast.success(resp.data.message)
       }
     } catch (error) {
-      console.log(error)
+      console.error(error)
       toast.error('Failed to send message')
     } finally {
       setIsLoading(false)
@@ -52,12 +62,14 @@ export const useSlack = () => {
   }
 
   useEffect(() => {
-    getChannels()
+    getContacts()
   }, [])
 
   return {
     isLoading,
     channels,
-    sendMessage
+    users,
+    sendMessage,
+    owner
   }
 }

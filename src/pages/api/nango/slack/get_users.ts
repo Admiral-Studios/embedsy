@@ -8,10 +8,10 @@ export default async function handler(request: NextApiRequest, response: NextApi
     const data = await nango.listRecords({
       providerConfigKey: 'slack',
       connectionId,
-      model: 'SlackChannel'
+      model: 'SlackUser'
     })
 
-    return response.status(200).json({ channels: data.records })
+    return response.status(200).json({ users: data.records })
   } catch (error) {
     console.error(error)
 
