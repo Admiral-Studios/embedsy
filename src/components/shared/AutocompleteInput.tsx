@@ -13,6 +13,7 @@ type Props = {
   error?: string
   multiple?: boolean
   freeSolo?: boolean
+  renderOption?: (option: any) => ReactNode | undefined
   getOptionLabel?: (option: any) => string
 }
 
@@ -27,6 +28,7 @@ const AutocompleteInput = ({
   error,
   multiple = false,
   freeSolo = false,
+  renderOption = undefined,
   getOptionLabel
 }: Props) => {
   const [inputValue, setInputValue] = useState('')
@@ -131,6 +133,7 @@ const AutocompleteInput = ({
       <Autocomplete
         size='small'
         fullWidth
+        renderOption={renderOption}
         multiple={multiple}
         freeSolo={freeSolo}
         options={options}
