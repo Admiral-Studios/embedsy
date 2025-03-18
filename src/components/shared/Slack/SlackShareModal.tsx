@@ -1,10 +1,9 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material'
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import { useSlack } from 'src/hooks/useSlack'
 import AutocompleteInput from '../AutocompleteInput'
 import { SlackShareModalOption } from './SlackShareModalOption'
-import axios from 'axios'
-import { NangoContext } from 'src/context/NangoContext'
+import toast from 'react-hot-toast'
 
 type Props = {
   open: boolean
@@ -12,45 +11,42 @@ type Props = {
 }
 
 const SlackShareModal = ({ open, onClose }: Props) => {
-  const { connectionId } = useContext(NangoContext)
-
-  //   const [loading, setLoading] = useState(false)
   const [activeContacts, setActiveContacts] = useState<string[]>([])
-  const { users, channels } = useSlack()
+  const { users, channels, sendMessage } = useSlack()
   const contacts = [...users, ...channels]
-  const options = contacts.map(contact => contact.name)
 
   const onChange = (values: string[]) => {
     setActiveContacts(values)
   }
 
-  console.log(users)
-
   const shareData = async () => {
-    // setLoading(true)
-
     try {
-      const resp = await axios.post('/api/nango/slack/send_message', {
-        connectionId,
-        channel: 'C08GRTP2HU4',
-        text: 'Hello from Nango'
-      })
+      const requests = activeContacts.map(channel =>
+        sendMessage(contacts.find(contact => contact.name === channel)?.id || '', 'Nango test message')
+      )
 
-      console.log(resp)
-    } catch (error) {
-      console.error(error)
+      const responses = await Promise.all(requests)
+
+      if (responses.length === 1) {
+        return toast.success('Message sent successfully')
+      } else {
+        return toast.success('Messages sent successfully')
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to share data')
     }
   }
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
-      <DialogTitle>Share on Slack</DialogTitle>
+      <DialogTitle>Share to Slack</DialogTitle>
 
       <DialogContent>
         <AutocompleteInput
           multiple
           freeSolo
-          options={options}
+          options={contacts.map(contact => contact.name)}
           placeholder='Add contacts to share data. Press "Enter" after each email.'
           onChange={onChange}
           value={activeContacts}

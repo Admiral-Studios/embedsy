@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { useContext, useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
 import { NangoContext } from 'src/context/NangoContext'
 import { SlackChannel, SlackUser } from 'src/types/apps/slackTypes'
 
@@ -41,21 +40,19 @@ export const useSlack = () => {
     setIsLoading(false)
   }
 
-  const sendMessage = async (channel: string, text: string) => {
+  const sendMessage = (channel: string, text: string) => {
     try {
       setIsLoading(true)
-      const resp = await axios.post('/api/nango/slack/send_message', {
+
+      return axios.post('/api/nango/slack/send_message', {
         connectionId,
         channel,
         text
       })
-
-      if (resp.data.ok) {
-        toast.success(resp.data.message)
-      }
     } catch (error) {
       console.error(error)
-      toast.error('Failed to send message')
+
+      return null
     } finally {
       setIsLoading(false)
     }
