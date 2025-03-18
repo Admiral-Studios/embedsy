@@ -35,6 +35,9 @@ const SlackShareModal = ({ open, onClose }: Props) => {
     } catch (e) {
       console.error(e)
       toast.error('Failed to share data')
+    } finally {
+      setActiveContacts([])
+      onClose()
     }
   }
 

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext } from 'react'
 import { Button, Card, CardContent, Grid, Typography } from '@mui/material'
 import { NangoContext } from 'src/context/NangoContext'
 import Nango from '@nangohq/frontend'
@@ -6,14 +6,12 @@ import Cookies from 'js-cookie'
 import toast from 'react-hot-toast'
 import axios from 'axios'
 import { useSlack } from 'src/hooks/useSlack'
-import SlackShareModal from 'src/components/shared/Slack/SlackShareModal'
 
 const IntegrationsPage = () => {
   const { sessionToken, integrations, providerConfigKey, connectionId, setProviderConfigKey, setConnectionId } =
     useContext(NangoContext)
   const { owner } = useSlack()
   const nango = new Nango({ connectSessionToken: sessionToken })
-  const [modal, setModal] = useState<boolean>(false)
 
   const connectSlack = async () => {
     nango.openConnectUI({
@@ -76,10 +74,6 @@ const IntegrationsPage = () => {
             </CardContent>
           </Card>
         ))}
-
-        <Button onClick={() => setModal(true)}>Open modal</Button>
-
-        <SlackShareModal open={modal} onClose={() => setModal(false)} />
       </Grid>
     </Grid>
   )

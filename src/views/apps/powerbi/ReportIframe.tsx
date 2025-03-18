@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import VisualModal from 'src/components/shared/Powerbi/VisualModal'
 import { shareSlackCustomCommand } from 'src/utils/shareSlackCustomCommand'
 import { useSlack } from 'src/hooks/useSlack'
+import SlackShareModal from 'src/components/shared/Slack/SlackShareModal'
 
 const fetcher = (url: string, email: string, datasetId: string, rowLevelRole: string) =>
   fetch(url, {
@@ -41,6 +42,7 @@ const PowerBiIframe = () => {
   const [isPageChangingFromReport, setIsPageChangingFromReport] = useState(false)
   const [isThemeInitialized, setIsThemeInitialized] = useState(false)
   const [visualData, setVisualData] = useState<{ url: any; visualName: string } | null>(null)
+  const [slackModal, setSlackModal] = useState(false)
   const { owner } = useSlack()
 
   const tokenManagerInitialized = useRef(false)
@@ -165,7 +167,7 @@ const PowerBiIframe = () => {
         }
 
         if (event?.detail?.command === 'shareSlack') {
-          console.log('test')
+          setSlackModal(true)
         }
       }
 
@@ -388,6 +390,7 @@ const PowerBiIframe = () => {
       </div>
 
       <VisualModal visualData={visualData} setVisualData={v => setVisualData(v)} />
+      <SlackShareModal open={slackModal} onClose={() => setSlackModal(false)} />
     </div>
   )
 }
