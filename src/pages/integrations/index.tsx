@@ -5,10 +5,13 @@ import toast from 'react-hot-toast'
 import axios from 'axios'
 import { useSlack } from 'src/hooks/useSlack'
 import { NangoIntegration } from 'src/context/types'
+import { useAuth } from 'src/hooks/useAuth'
+import SyncsSettingsModal from './_components/SyncsSettingsModal'
 
 const IntegrationsPage = () => {
   const [integrations, setIntegrations] = useState<NangoIntegration[]>([])
   const { owner, connectSlack, isSlackConnected, disconnectSlack } = useSlack()
+  const { hasAdminPrivileges } = useAuth()
 
   const getIntegrations = async () => {
     try {
@@ -31,9 +34,15 @@ const IntegrationsPage = () => {
   return (
     <Grid container spacing={6}>
       <Grid item xs={12}>
-        <Typography variant='h3' marginBottom={4}>
-          Integrations
-        </Typography>
+        <Grid
+          marginBottom={5}
+          height={40}
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          <Typography variant='h3'>Integrations</Typography>
+
+          {hasAdminPrivileges && <SyncsSettingsModal />}
+        </Grid>
 
         {integrations?.map(integration => (
           <Card key={integration.display_name}>
