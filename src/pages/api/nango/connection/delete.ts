@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { nango } from '../../index'
+import { nango } from '../index'
 import ExecuteQuery from 'src/utils/db'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
