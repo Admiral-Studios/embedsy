@@ -5,12 +5,16 @@ export default async function handler(request: NextApiRequest, response: NextApi
   const { connectionId, providerConfigKey } = request.body
 
   if (connectionId || providerConfigKey) {
-    const res = await nango.createReconnectSession({
-      connection_id: connectionId,
-      integration_id: providerConfigKey
-    })
+    try {
+      const res = await nango.createReconnectSession({
+        connection_id: connectionId,
+        integration_id: providerConfigKey
+      })
 
-    return response.status(200).json({ sessionToken: res.data.token })
+      return response.status(200).json({ sessionToken: res.data.token })
+    } catch (error) {
+      return response.status(500).json({ message: 'Internal server error' })
+    }
   }
 
   try {

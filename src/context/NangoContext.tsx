@@ -1,16 +1,18 @@
 import { createContext, useState, ReactNode, useEffect } from 'react'
-import { NangoValuesType } from './types'
+import { NangoConnection, NangoValuesType } from './types'
 import toast from 'react-hot-toast'
 import axios from 'axios'
-import Cookies from 'js-cookie'
+import { useAuth } from 'src/hooks/useAuth'
 
 const defaultProvider: NangoValuesType = {
   sessionToken: '',
   connectionId: '',
-  providerConfigKey: '',
-  integrations: [],
+  providerConfigKey: 'slack',
+  connections: [],
+  setConnections: () => null,
   setConnectionId: () => null,
-  setProviderConfigKey: () => null
+  setProviderConfigKey: () => null,
+  getSessionToken: () => null
 }
 
 const NangoContext = createContext(defaultProvider)
@@ -20,60 +22,67 @@ type Props = {
 }
 
 const NangoProvider = ({ children }: Props) => {
-  const cookies = Cookies.get()
   const [sessionToken, setSessionToken] = useState(defaultProvider.sessionToken)
+  const [connections, setConnections] = useState<NangoConnection[]>(defaultProvider.connections)
   const [connectionId, setConnectionId] = useState(defaultProvider.connectionId)
   const [providerConfigKey, setProviderConfigKey] = useState(defaultProvider.providerConfigKey)
-  const [integrations, setIntegrations] = useState(defaultProvider.integrations)
+  const { user } = useAuth()
 
-  const getSessionToken = async () => {
+  const getUserConnections = async () => {
+    const { data } = await axios.get(`/api/nango/connection/get?userId=${user?.id}`)
+
+    if (!data.ok) {
+      return console.error('Nango connection failed')
+    }
+
+    const result = data.result.map((item: any) => ({
+      providerConfigKey: item.provider_config_key,
+      connectionId: item.connection_id
+    }))
+
+    setConnections(result)
+  }
+
+  const getSessionToken = async ({
+    connectionId,
+    providerConfigKey
+  }: {
+    connectionId: string | null
+    providerConfigKey: string | null
+  }) => {
     try {
       const response = await axios.post('/api/nango/session_token', {
-        connectionId: cookies?.connectionId,
-        providerConfigKey: cookies?.providerConfigKey
+        connectionId: connectionId || null,
+        providerConfigKey: providerConfigKey || null
       })
 
       if (response.status !== 200) {
         console.error(response)
 
-        return
+        throw new Error('Failed to retrieve session token')
       }
       setSessionToken(response.data.sessionToken)
-      getIntegrations()
     } catch (error) {
       console.error(error)
       toast.error('Connection failed, please try again later')
     }
   }
 
-  const getIntegrations = async () => {
-    try {
-      const response = await axios.get('/api/nango/get_integrations')
-      setIntegrations(response.data.integrations)
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
   useEffect(() => {
-    getSessionToken()
-
-    if (cookies?.connectionId) {
-      setConnectionId(cookies.connectionId)
+    if (user?.id) {
+      getUserConnections()
     }
-
-    if (cookies?.providerConfigKey) {
-      setProviderConfigKey(cookies.providerConfigKey)
-    }
-  }, [])
+  }, [user])
 
   const values = {
     sessionToken,
+    connections,
+    setConnections,
     connectionId,
     providerConfigKey,
-    integrations,
     setConnectionId,
-    setProviderConfigKey
+    setProviderConfigKey,
+    getSessionToken
   }
 
   return <NangoContext.Provider value={values}>{children}</NangoContext.Provider>

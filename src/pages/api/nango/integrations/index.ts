@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { nango } from '.'
+import { nango } from '..'
 
-const listIntegrations = async (req: NextApiRequest, res: NextApiResponse) => {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET'])
 
@@ -10,10 +10,8 @@ const listIntegrations = async (req: NextApiRequest, res: NextApiResponse) => {
 
   try {
     const response = await nango.listIntegrations()
-    res.status(200).json({ integrations: response.configs })
+    res.status(200).json({ ok: true, integrations: response.configs })
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch integrations' })
+    res.status(500).json({ ok: false, message: 'Failed to fetch integrations' })
   }
 }
-
-export default listIntegrations

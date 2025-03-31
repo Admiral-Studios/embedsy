@@ -96,17 +96,24 @@ export interface ChangedUserData {
   username?: string
 }
 
-type NangoIntegration = {
+export type NangoIntegration = {
   display_name: string
   logo: string
   provider: string
+}
+
+export type NangoConnection = {
+  connectionId: string
+  providerConfigKey: string
 }
 
 export type NangoValuesType = {
   sessionToken?: string
   connectionId?: string
   providerConfigKey?: string
-  integrations: NangoIntegration[]
+  connections: NangoConnection[]
+  setConnections: React.Dispatch<React.SetStateAction<NangoConnection[]>>
   setConnectionId: (connectionId: string) => void | null
   setProviderConfigKey: (providerConfigKey: string) => void | null
+  getSessionToken: (arg: NangoConnection) => Promise<void> | null
 }

@@ -1,50 +1,32 @@
-import React, { useContext } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, Card, CardContent, Grid, Typography } from '@mui/material'
-import { NangoContext } from 'src/context/NangoContext'
-import Nango from '@nangohq/frontend'
-import Cookies from 'js-cookie'
+
 import toast from 'react-hot-toast'
 import axios from 'axios'
 import { useSlack } from 'src/hooks/useSlack'
+import { NangoIntegration } from 'src/context/types'
 
 const IntegrationsPage = () => {
-  const { sessionToken, integrations, providerConfigKey, connectionId, setProviderConfigKey, setConnectionId } =
-    useContext(NangoContext)
-  const { owner } = useSlack()
-  const nango = new Nango({ connectSessionToken: sessionToken })
+  const [integrations, setIntegrations] = useState<NangoIntegration[]>([])
+  const { owner, connectSlack, isSlackConnected, disconnectSlack } = useSlack()
 
-  const connectSlack = async () => {
-    nango.openConnectUI({
-      sessionToken,
-      onEvent: event => {
-        if (event.type === 'connect') {
-          Cookies.set('connectionId', event.payload.connectionId, { path: '/', sameSite: 'Strict' })
-          setConnectionId(event.payload.connectionId)
-          Cookies.set('providerConfigKey', event.payload.providerConfigKey, { path: '/', sameSite: 'Strict' })
-          setProviderConfigKey(event.payload.providerConfigKey)
-          toast.success('Slack connected successfully')
-        }
+  const getIntegrations = async () => {
+    try {
+      const { data } = await axios.get('/api/nango/integrations')
+
+      if (data.ok) {
+        setIntegrations(data.integrations)
+      } else {
+        toast.error(data.message)
       }
-    })
-  }
-
-  const disconnectSlack = async () => {
-    const resp = await axios.post('/api/nango/delete_connection', {
-      integrationId: providerConfigKey,
-      connectionId
-    })
-
-    if (resp.data.ok) {
-      Cookies.remove('connectionId')
-      Cookies.remove('providerConfigKey')
-      setConnectionId('')
-      setProviderConfigKey('')
-
-      return toast.success(resp.data.message)
+    } catch (error) {
+      console.error(error)
     }
-
-    return toast.error(resp.data.message)
   }
+
+  useEffect(() => {
+    getIntegrations()
+  }, [])
 
   return (
     <Grid container spacing={6}>
@@ -62,7 +44,7 @@ const IntegrationsPage = () => {
 
                 <Typography marginLeft={3}>{owner?.profile?.email}</Typography>
               </div>
-              {owner?.id ? (
+              {isSlackConnected ? (
                 <Button variant='outlined' color='error' onClick={disconnectSlack}>
                   Disconnect
                 </Button>
