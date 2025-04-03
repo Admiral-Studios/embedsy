@@ -78,6 +78,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (error.response?.status === 401) {
         return res.status(204).end()
       }
+      if (error.response?.status === 403) {
+        return res
+          .status(403)
+          .send(
+            'The Service Principal used in this portal does not have access to any Fabric or Power BI Embedded capacities. In our documentation, we show you how you can get access to your capacities.'
+          )
+      }
       throw error
     }
   } catch (error) {

@@ -10,10 +10,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-      const values = userRoles.map(({ email, roleId }) => `('${email}', '${roleId}')`).join(',')
-      const query = `INSERT INTO user_roles (email, role_id) VALUES ${values}`
+      for (const { email, roleId } of userRoles) {
+        const checkExistingRoleQuery = `SELECT TOP 1 * FROM user_roles WHERE email='${email}'`
+        const existingRoleResult = await ExecuteQuery(checkExistingRoleQuery)
 
-      await ExecuteQuery(query)
+        if (!existingRoleResult[0]?.length) {
+          const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES ('${email}', ${roleId});`
+          await ExecuteQuery(assignRoleQuery)
+        }
+      }
 
       res.status(200).json({ message: 'User roles inserted successfully' })
     } catch (error) {

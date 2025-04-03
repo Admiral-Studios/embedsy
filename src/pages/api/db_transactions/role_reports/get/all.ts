@@ -22,20 +22,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let powerBiReports = []
 
     if (is_admin) {
-      const authenticationToken = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/auth-token`)
-        .then(res => res.json())
-        .then(data => data.access_token)
+      try {
+        const authResponse = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/auth-token`)
+        const authData = await authResponse.json()
 
-      const reportPromises = workspaces.map(async workspace => {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/reports`, {
-          workspaceId: workspace.id,
-          authenticationToken
-        })
+        if (authResponse.ok && authData.access_token) {
+          const authenticationToken = authData.access_token
 
-        return response.data
-      })
+          const reportPromises = workspaces.map(async workspace => {
+            try {
+              const response = await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/reports`, {
+                workspaceId: workspace.id,
+                authenticationToken
+              })
 
-      powerBiReports = (await Promise.all(reportPromises)).flat()
+              return response.data
+            } catch (error) {
+              console.error(`Failed to fetch reports for workspace ${workspace.id}:`, error)
+
+              return []
+            }
+          })
+
+          powerBiReports = (await Promise.all(reportPromises)).flat()
+        } else {
+          console.warn('PowerBI authentication failed: Invalid or missing access token')
+        }
+      } catch (error) {
+        console.error('PowerBI authentication failed:', error)
+      }
     }
 
     for (let i = 0; i < innerArray.length; i++) {

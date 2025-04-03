@@ -20,12 +20,15 @@ import { NangoSync } from 'src/context/types'
 import Paper from '@mui/material/Paper'
 import toast from 'react-hot-toast'
 
-const SyncsSettingsModal = () => {
-  const [open, setOpen] = useState(false)
+type Props = {
+  handleClose: () => void
+  integration: string | null
+  connectionId: string | undefined
+}
+
+const SyncsSettingsModal = ({ integration, handleClose, connectionId }: Props) => {
   const [loading, setLoading] = useState(false)
   const [syncs, setSyncs] = useState<NangoSync[]>([])
-  const handleClickOpen = () => setOpen(true)
-  const handleClose = () => setOpen(false)
   const initialSyncsRef = useRef<any[]>([])
 
   const handleSave = async () => {
@@ -69,7 +72,7 @@ const SyncsSettingsModal = () => {
   const getSyncs = async () => {
     try {
       setLoading(true)
-      const resp = await axios.get('/api/nango/syncs/get')
+      const resp = await axios.get(`/api/nango/syncs/get?provider=${integration}&connectionId=${connectionId}`)
       setSyncs(resp.data.syncs)
 
       if (initialSyncsRef.current.length === 0) {
@@ -83,79 +86,76 @@ const SyncsSettingsModal = () => {
   }
 
   useEffect(() => {
-    getSyncs()
-  }, [])
+    if (integration && connectionId) {
+      getSyncs()
+    }
+  }, [integration])
 
   return (
-    <Fragment>
-      <Button variant='contained' sx={{ height: '100%' }} onClick={handleClickOpen}>
-        Syncs settings
-      </Button>
-      <Dialog open={open} onClose={handleClose} maxWidth={'md'} sx={{ overflow: 'hidden' }}>
-        <DialogTitle id='alert-dialog-title'>Syncs settings</DialogTitle>
+    <Dialog open={!!integration} onClose={handleClose} maxWidth={'md'} sx={{ overflow: 'hidden' }}>
+      <DialogTitle id='alert-dialog-title'>Syncs settings</DialogTitle>
 
-        <DialogContent sx={{ gap: '10px', display: 'flex', flexDirection: 'column', minWidth: '800px' }}>
-          {loading ? (
-            <DialogContentText
-              sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '180px' }}
-            >
-              <CircularProgress size={35} />
-            </DialogContentText>
-          ) : (
-            <>
-              <TableContainer component={Paper}>
-                <Table sx={{ width: '800px' }} size='small'>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell align='left' width={150}>
-                        Sync Name
+      <DialogContent sx={{ gap: '10px', display: 'flex', flexDirection: 'column', minWidth: '800px' }}>
+        {loading ? (
+          <DialogContentText
+            sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '180px' }}
+          >
+            <CircularProgress size={35} />
+          </DialogContentText>
+        ) : (
+          <>
+            <TableContainer component={Paper}>
+              <Table sx={{ width: '800px' }} size='small'>
+                <TableHead>
+                  <TableRow>
+                    <TableCell align='left' width={150}>
+                      Sync Name
+                    </TableCell>
+
+                    <TableCell align='left' width={200}>
+                      Status
+                    </TableCell>
+
+                    <TableCell align='left' width={150}>
+                      Frequency
+                    </TableCell>
+
+                    <TableCell align='left' width={200}>
+                      Last Sync Start
+                    </TableCell>
+
+                    <TableCell align='left' width={100}></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {syncs.map(sync => (
+                    <TableRow key={sync.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                      <TableCell component='th' scope='row'>
+                        {sync.name}
                       </TableCell>
+                      <TableCell align='left'>{sync.status}</TableCell>
+                      <TableCell align='left'>{sync.frequency}</TableCell>
+                      <TableCell align='left'>{new Date(sync.finishedAt).toLocaleString()}</TableCell>
 
-                      <TableCell align='left' width={200}>
-                        Status
+                      <TableCell align='right'>
+                        <Switch checked={sync.status === 'SUCCESS'} onChange={() => handleSwitch(sync)} />
                       </TableCell>
-
-                      <TableCell align='left' width={150}>
-                        Frequency
-                      </TableCell>
-
-                      <TableCell align='left' width={200}>
-                        Last Sync Start
-                      </TableCell>
-
-                      <TableCell align='left' width={100}></TableCell>
                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {syncs.map(sync => (
-                      <TableRow key={sync.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                        <TableCell component='th' scope='row'>
-                          {sync.name}
-                        </TableCell>
-                        <TableCell align='left'>{sync.status}</TableCell>
-                        <TableCell align='left'>{sync.frequency}</TableCell>
-                        <TableCell align='left'>{new Date(sync.finishedAt).toLocaleString()}</TableCell>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </>
+        )}
+      </DialogContent>
 
-                        <TableCell align='right'>
-                          <Switch checked={sync.status === 'SUCCESS'} onChange={() => handleSwitch(sync)} />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </>
-          )}
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={handleClose}>Close</Button>
-          <Button onClick={handleSave} autoFocus>
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Fragment>
+      <DialogActions>
+        <Button onClick={handleClose}>Close</Button>
+        <Button onClick={handleSave} autoFocus>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 

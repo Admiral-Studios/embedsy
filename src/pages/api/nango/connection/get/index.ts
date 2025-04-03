@@ -14,8 +14,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
   try {
     const query = `
-      SELECT * FROM external_integrations WHERE user_id = '${userId}'
-    `
+       SELECT * FROM external_integrations WHERE user_id = '${userId}'
+     `
 
     const result = await ExecuteQuery(query)
 

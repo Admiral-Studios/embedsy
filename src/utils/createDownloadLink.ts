@@ -1,16 +1,10 @@
-export const createDownloadLink = async (downloadLink: string, fileName: string) => {
-  const response = await fetch(downloadLink)
-  const blob = await response.blob()
-
-  const blobUrl = URL.createObjectURL(blob)
-
+export const createDownloadLink = (blob: Blob, fileName: string) => {
   const link = document.createElement('a')
-  link.href = blobUrl
+  link.href = URL.createObjectURL(blob)
   link.download = fileName
   document.body.appendChild(link)
   link.click()
 
-  // Cleanup
   document.body.removeChild(link)
-  URL.revokeObjectURL(blobUrl)
+  URL.revokeObjectURL(link.href)
 }

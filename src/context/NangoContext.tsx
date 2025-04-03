@@ -1,5 +1,5 @@
 import { createContext, useState, ReactNode, useEffect } from 'react'
-import { NangoConnection, NangoValuesType } from './types'
+import { NangoConnection, NangoIntegration, NangoValuesType } from './types'
 import toast from 'react-hot-toast'
 import axios from 'axios'
 import { useAuth } from 'src/hooks/useAuth'
@@ -12,7 +12,9 @@ const defaultProvider: NangoValuesType = {
   setConnections: () => null,
   setConnectionId: () => null,
   setProviderConfigKey: () => null,
-  getSessionToken: () => null
+  getSessionToken: () => null,
+  integrations: [],
+  getIntegrations: () => Promise.resolve()
 }
 
 const NangoContext = createContext(defaultProvider)
@@ -26,6 +28,8 @@ const NangoProvider = ({ children }: Props) => {
   const [connections, setConnections] = useState<NangoConnection[]>(defaultProvider.connections)
   const [connectionId, setConnectionId] = useState(defaultProvider.connectionId)
   const [providerConfigKey, setProviderConfigKey] = useState(defaultProvider.providerConfigKey)
+  const [integrations, setIntegrations] = useState<NangoIntegration[]>([])
+
   const { user } = useAuth()
 
   const getUserConnections = async () => {
@@ -35,7 +39,7 @@ const NangoProvider = ({ children }: Props) => {
       return console.error('Nango connection failed')
     }
 
-    const result = data.result.map((item: any) => ({
+    const result: NangoConnection[] = data.result.map((item: any) => ({
       providerConfigKey: item.provider_config_key,
       connectionId: item.connection_id
     }))
@@ -74,6 +78,24 @@ const NangoProvider = ({ children }: Props) => {
     }
   }, [user])
 
+  const getIntegrations = async () => {
+    try {
+      const { data } = await axios.get('/api/nango/integrations')
+
+      if (data.ok) {
+        setIntegrations(data.integrations)
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  useEffect(() => {
+    getIntegrations()
+  }, [])
+
   const values = {
     sessionToken,
     connections,
@@ -82,7 +104,9 @@ const NangoProvider = ({ children }: Props) => {
     providerConfigKey,
     setConnectionId,
     setProviderConfigKey,
-    getSessionToken
+    getSessionToken,
+    integrations,
+    getIntegrations
   }
 
   return <NangoContext.Provider value={values}>{children}</NangoContext.Provider>

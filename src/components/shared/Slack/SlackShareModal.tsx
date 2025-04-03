@@ -8,9 +8,10 @@ import toast from 'react-hot-toast'
 type Props = {
   open: boolean
   onClose: () => void
+  sharedData: null | string
 }
 
-const SlackShareModal = ({ open, onClose }: Props) => {
+const SlackShareModal = ({ open, onClose, sharedData }: Props) => {
   const [activeContacts, setActiveContacts] = useState<string[]>([])
   const { users, channels, sendMessage } = useSlack()
   const contacts = [...users, ...channels]
@@ -22,7 +23,7 @@ const SlackShareModal = ({ open, onClose }: Props) => {
   const shareData = async () => {
     try {
       const requests = activeContacts.map(channel =>
-        sendMessage(contacts.find(contact => contact.name === channel)?.id || '', 'Nango test message')
+        sendMessage(contacts.find(contact => contact.name === channel)?.id || '', sharedData || 'Nango test message')
       )
 
       const responses = await Promise.all(requests)

@@ -132,8 +132,8 @@ const App = (props: ExtendedAppProps) => {
         <MsalAuthProvider>
           <AuthProvider>
             <AdminRolesProvider>
-              <NangoProvider>
-                <SettingsProvider {...(setConfig ? { pageSettings: setConfig() } : {})}>
+              <SettingsProvider {...(setConfig ? { pageSettings: setConfig() } : {})}>
+                <NangoProvider>
                   <SessionProvider>
                     <SettingsConsumer>
                       {({ settings }) => {
@@ -164,8 +164,8 @@ const App = (props: ExtendedAppProps) => {
                       }}
                     </SettingsConsumer>
                   </SessionProvider>
-                </SettingsProvider>
-              </NangoProvider>
+                </NangoProvider>
+              </SettingsProvider>
             </AdminRolesProvider>
           </AuthProvider>
         </MsalAuthProvider>

@@ -1,9 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { nango } from '..'
+import { nango } from '../index'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { provider, connectionId } = req.query as {
+    provider: string
+    connectionId: string
+  }
+
   try {
-    const resp = await nango.syncStatus('slack', '*', '7ac74b64-509b-47e8-98f8-410d58fb5fcf')
+    const resp = await nango.syncStatus(provider, '*')
 
     res.status(200).json({ syncs: resp.syncs })
   } catch (error) {

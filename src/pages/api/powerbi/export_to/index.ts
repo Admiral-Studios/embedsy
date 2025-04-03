@@ -4,15 +4,13 @@ import axios from 'axios'
 type FileTypes = 'PDF' | 'PPTX' | 'PNG'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { workspaceId, reportId, type, email, rowLevelRole, datasetId, visualName, pageName } = req.body as {
+  const { workspaceId, reportId, type, email, rowLevelRole, datasetId } = req.body as {
     workspaceId: string
     reportId: string
     type: FileTypes
     datasetId?: string
     email?: string
     rowLevelRole?: string
-    visualName?: string
-    pageName?: string
   }
 
   if (!workspaceId || !reportId || !type) {
@@ -28,28 +26,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/ExportTo`,
       {
         format: type,
-        ...(((rowLevelRole && datasetId) || visualName) && {
-          powerBIReportConfiguration: {
-            ...(rowLevelRole &&
-              datasetId && {
-                identities: [
-                  {
-                    username: email,
-                    roles: [rowLevelRole],
-                    datasets: [datasetId]
-                  }
-                ]
-              }),
-            ...(visualName && {
-              pages: [
+        ...(rowLevelRole &&
+          datasetId && {
+            powerBIReportConfiguration: {
+              identities: [
                 {
-                  pageName: pageName,
-                  visualName: visualName
+                  username: email,
+                  roles: [rowLevelRole],
+                  datasets: [datasetId]
                 }
               ]
-            })
-          }
-        })
+            }
+          })
       },
       {
         headers: {

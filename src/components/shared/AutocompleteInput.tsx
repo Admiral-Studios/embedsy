@@ -13,11 +13,13 @@ type Props = {
   error?: string
   multiple?: boolean
   freeSolo?: boolean
-  renderOption?: (option: any) => ReactNode | undefined
   getOptionLabel?: (option: any) => string
+  getOptionValue?: (option: string) => string
+  renderOption?: (option: any) => ReactNode | undefined
 }
 
 const defaultGetOptionLabel = (option: any) => option
+const defaultGetOptionValue = (option: string) => option
 
 const AutocompleteInput = ({
   onChange,
@@ -28,8 +30,9 @@ const AutocompleteInput = ({
   error,
   multiple = false,
   freeSolo = false,
-  renderOption = undefined,
-  getOptionLabel
+  getOptionLabel,
+  getOptionValue = defaultGetOptionValue,
+  renderOption = undefined
 }: Props) => {
   const [inputValue, setInputValue] = useState('')
   const [editableValue, setEditableValue] = useState<{ index: number; value: string } | null>(null)
@@ -133,14 +136,25 @@ const AutocompleteInput = ({
       <Autocomplete
         size='small'
         fullWidth
-        renderOption={renderOption}
         multiple={multiple}
         freeSolo={freeSolo}
         options={options}
         value={value}
         inputValue={inputValue}
         getOptionLabel={getOptionLabel || defaultGetOptionLabel}
-        onChange={(_, newValue) => onChange(newValue)}
+        renderOption={renderOption}
+        onChange={(_, newValue) => {
+          if (multiple && Array.isArray(newValue)) {
+            const processedValues = newValue.map(item => {
+              if (value.includes(item)) return item
+
+              return typeof item === 'string' ? getOptionValue(item) : item
+            })
+            onChange(processedValues)
+          } else {
+            onChange(newValue ? (typeof newValue === 'string' ? getOptionValue(newValue) : newValue) : newValue)
+          }
+        }}
         onInputChange={handleInputChange}
         renderInput={params => (
           <CustomTextField

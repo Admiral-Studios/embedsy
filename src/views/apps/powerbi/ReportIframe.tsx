@@ -14,14 +14,10 @@ import { usePBITheme } from 'src/hooks/powerbi/usePBITheme'
 import { useSettings } from 'src/@core/hooks/useSettings'
 import { preloadThemes } from 'src/utils/powerbi/preloadPBI'
 import { ReportTypes } from 'src/enums/pageTypes'
-import { exportVisual } from 'src/utils/powerbi/exportVisual'
-import { takeSnapshotCustomCommand } from 'src/utils/powerbi/takeSnapshotCustomCommand'
-import { powerBiConfigSettings } from 'src/configs/powerbi'
-import toast from 'react-hot-toast'
-import VisualModal from 'src/components/shared/Powerbi/VisualModal'
 import { shareSlackCustomCommand } from 'src/utils/shareSlackCustomCommand'
 import { useSlack } from 'src/hooks/useSlack'
 import SlackShareModal from 'src/components/shared/Slack/SlackShareModal'
+import { powerBiConfigSettings } from 'src/configs/powerbi'
 
 const fetcher = (url: string, email: string, datasetId: string, rowLevelRole: string) =>
   fetch(url, {
@@ -41,8 +37,7 @@ const PowerBiIframe = () => {
   const [lightThemeConfig, setLightThemeConfig] = useState(null)
   const [isPageChangingFromReport, setIsPageChangingFromReport] = useState(false)
   const [isThemeInitialized, setIsThemeInitialized] = useState(false)
-  const [visualData, setVisualData] = useState<{ url: any; visualName: string } | null>(null)
-  const [slackModal, setSlackModal] = useState(false)
+  const [slackShareData, setSlackShareData] = useState<string | null>(null)
   const { owner } = useSlack()
 
   const tokenManagerInitialized = useRef(false)
@@ -52,9 +47,8 @@ const PowerBiIframe = () => {
   const { query, push, pathname } = useRouter()
   const { user } = useAuth()
   const theme = useTheme()
-  const { appBranding, appPortalSettings } = useSettings()
+  const { appBranding } = useSettings()
 
-  const isTakeSnapshotEnabled = Boolean(appPortalSettings.power_bi_snapshot_extension)
   const isSlackShareEnabled = Boolean(owner?.id)
 
   useEffect(() => {
@@ -99,6 +93,38 @@ const PowerBiIframe = () => {
     }
   )
 
+  const initializeSnapshotTrigger = async (
+    event: pbi.service.ICustomEvent<{
+      command: string
+      visual: {
+        name: string
+      }
+      page: {
+        name: string
+      }
+    }>
+  ) => {
+    if (event?.detail?.command === 'shareSlack') {
+      if (report) {
+        const pages = await report.getPages()
+
+        const activePage = pages.filter(function (page) {
+          return page.isActive
+        })[0]
+
+        const visuals = await activePage.getVisuals()
+
+        const visual = visuals.find(({ name }) => name === event.detail.visual.name)
+
+        if (visual) {
+          const data = await visual.exportData()
+
+          setSlackShareData(data.data)
+        }
+      }
+    }
+  }
+
   useEffect(() => {
     const fetchThemes = async () => {
       if (appBranding?.powerbi_dark_theme) {
@@ -134,40 +160,6 @@ const PowerBiIframe = () => {
           } catch (error) {
             console.error('Error initializing theme:', error)
           }
-        }
-      }
-
-      const initializeSnapshotTrigger = async (
-        event: pbi.service.ICustomEvent<{
-          command: string
-          visual: {
-            name: string
-          }
-          page: {
-            name: string
-          }
-        }>
-      ) => {
-        if (event?.detail?.command === 'snapshot') {
-          const exportPromise = exportVisual(
-            workspaceId,
-            reportId,
-            'PNG',
-            event.detail.visual.name,
-            event.detail.page.name
-          )
-
-          const visualData = await toast.promise(exportPromise, {
-            loading: 'Loading snapshot',
-            success: 'Successfully',
-            error: 'Snapshot loading error'
-          })
-
-          setVisualData(visualData)
-        }
-
-        if (event?.detail?.command === 'shareSlack') {
-          setSlackModal(true)
         }
       }
 
@@ -271,7 +263,6 @@ const PowerBiIframe = () => {
           setReport(embeddedReport as pbi.Report)
           setContextReport(embeddedReport as pbi.Report)
 
-          if (isTakeSnapshotEnabled) takeSnapshotCustomCommand(embeddedReport as pbi.Report)
           if (isSlackShareEnabled) shareSlackCustomCommand(embeddedReport as pbi.Report)
         }
       }
@@ -349,10 +340,6 @@ const PowerBiIframe = () => {
                   'rendered',
                   (_: any, r: any) => {
                     const renderExtensions = async () => {
-                      if (isTakeSnapshotEnabled) {
-                        await takeSnapshotCustomCommand(r)
-                      }
-
                       if (isSlackShareEnabled) {
                         await shareSlackCustomCommand(r)
                       }
@@ -389,8 +376,7 @@ const PowerBiIframe = () => {
         </div>
       </div>
 
-      <VisualModal visualData={visualData} setVisualData={v => setVisualData(v)} />
-      <SlackShareModal open={slackModal} onClose={() => setSlackModal(false)} />
+      <SlackShareModal open={!!slackShareData} sharedData={slackShareData} onClose={() => setSlackShareData(null)} />
     </div>
   )
 }

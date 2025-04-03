@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
-import { nango } from '../index'
+import { nango } from '../../index'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.method !== 'POST') {
@@ -15,8 +15,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
   try {
     const query = `
-      SELECT * FROM external_integrations WHERE user_id = '${userId}' AND provider_config_key = '${providerConfigKey}'
-    `
+       SELECT * FROM external_integrations WHERE user_id = '${userId}' AND provider_config_key = '${providerConfigKey}'
+     `
 
     const connections = await ExecuteQuery(query)
 
@@ -41,9 +41,9 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }
 
     const insertQuery = `
-      INSERT INTO external_integrations (user_id, connection_id, connection_user_id, connection_user_email, provider_config_key)
-      VALUES ('${userId}', '${connectionId}', '${connectionUserId}', '${connectionUserEmail}', '${providerConfigKey}');
-    `
+       INSERT INTO external_integrations (user_id, connection_id, connection_user_id, connection_user_email, provider_config_key)
+       VALUES ('${userId}', '${connectionId}', '${connectionUserId}', '${connectionUserEmail}', '${providerConfigKey}');
+     `
 
     await ExecuteQuery(insertQuery)
 

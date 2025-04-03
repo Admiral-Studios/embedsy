@@ -17,9 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const syncsPromises = syncs.map((sync: NangoSync) => {
     if (sync.status === 'PAUSED') {
-      return nango.pauseSync('slack', [sync.name], sync.connection_id)
+      return nango.pauseSync('slack', [sync.name])
     } else {
-      return nango.startSync('slack', [sync.name], sync.connection_id)
+      return nango.startSync('slack', [sync.name])
     }
   })
 

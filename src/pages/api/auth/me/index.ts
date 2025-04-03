@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       email: user.email
     })
 
-    const { role, role_id, can_refresh, can_export, workspaces, iframes, can_manage_own_account } = data
+    const { role, role_id, can_refresh, can_export, workspaces, iframes, hyperlinks, can_manage_own_account } = data
 
     res.status(200).json({
       userData: {
@@ -61,6 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         custom_role_id: viewAsCustomRole,
         workspaces: workspaces,
         iframes,
+        hyperlinks,
         password_set: user.password_hash ? true : false
       }
     })

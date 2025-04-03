@@ -115,9 +115,27 @@ const PortalConfiguration = () => {
 
   useEffect(() => {
     const getCapacities = async () => {
-      const response = await axios.get('/api/powerbi/capacity/get/all')
-      if (response.status === 200 && response.data.capacities.length) {
-        setCapacities(response.data.capacities)
+      try {
+        const response = await axios.get('/api/powerbi/capacity/get/all')
+        if (response.status === 200 && response.data.capacities.length) {
+          setCapacities(response.data.capacities)
+        }
+      } catch (error: any) {
+        if (error.response && error.response.status === 403) {
+          toast.error(
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {error.response.data}
+              <br />
+              <a
+                href='https://embedsy.io/documentation/installation/capacity_settings'
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                Click here for documentation.
+              </a>
+            </div>
+          )
+        }
       }
     }
 
@@ -133,15 +151,6 @@ const PortalConfiguration = () => {
 
     if (!values[PortalSettingNames.power_bi_trial_capacity] && !values[PortalSettingNames.power_bi_capacity_name]) {
       toast.error('You must either select the trial capacity, or use a premium capacity.')
-
-      return false
-    }
-
-    if (
-      values[PortalSettingNames.service_principal_client_id] &&
-      !values[PortalSettingNames.service_principal_secret]
-    ) {
-      toast.error('Service Principal Client ID Secret is required when Service Principal Client ID is provided')
 
       return false
     }
@@ -464,11 +473,17 @@ const PortalConfiguration = () => {
                             }
                           }}
                         >
-                          {capacities.map((capacity: any) => (
-                            <MenuItem key={capacity.name} value={capacity.name}>
-                              {`${capacity.name} (${capacity.type_label})`}
+                          {capacities.length > 0 ? (
+                            capacities.map((capacity: any) => (
+                              <MenuItem key={capacity.name} value={capacity.name}>
+                                {`${capacity.name} (${capacity.type_label})`}
+                              </MenuItem>
+                            ))
+                          ) : (
+                            <MenuItem disabled value='unknown'>
+                              There are no capacities available
                             </MenuItem>
-                          ))}
+                          )}
                         </Select>
                       </FormControl>
                       {form.watch(PortalSettingNames.power_bi_capacity_name) && (
@@ -581,27 +596,6 @@ const PortalConfiguration = () => {
                           />
                         }
                         label='Trial Capacity'
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Divider />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <Typography variant='h5'>Power BI Extensions</Typography>
-                    </Grid>
-                    <Grid item xs={12}>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={Boolean(form.watch(PortalSettingNames.power_bi_snapshot_extension)) || false}
-                            onChange={e => {
-                              form.setValue(PortalSettingNames.power_bi_snapshot_extension, e.target.checked, {
-                                shouldDirty: true
-                              })
-                            }}
-                          />
-                        }
-                        label='Take snapshot command'
                       />
                     </Grid>
                   </>

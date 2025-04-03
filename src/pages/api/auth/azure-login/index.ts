@@ -42,17 +42,22 @@ const registerNewUser = async (email: string, user_name: string) => {
   const querySave = `INSERT INTO Users (user_name, email, name, is_verified, created_at, updated_at) VALUES ('${user_name}', '${email}', '${user_name}', '${true}', '${currentDate}', '${currentDate}');`
   await ExecuteQuery(querySave)
 
-  const getGuestRoleQuery = `SELECT TOP 1 id FROM roles WHERE role = '${PermanentRoles.guest}'`
-  const guestRoleResult = await ExecuteQuery(getGuestRoleQuery)
+  const checkExistingRoleQuery = `SELECT TOP 1 * FROM user_roles WHERE email='${email}'`
+  const existingRoleResult = await ExecuteQuery(checkExistingRoleQuery)
 
-  if (!guestRoleResult[0]?.length) {
-    throw new Error('Guest role not found')
+  if (!existingRoleResult[0]?.length) {
+    const getGuestRoleQuery = `SELECT TOP 1 id FROM roles WHERE role = '${PermanentRoles.guest}'`
+    const guestRoleResult = await ExecuteQuery(getGuestRoleQuery)
+
+    if (!guestRoleResult[0]?.length) {
+      throw new Error('Guest role not found')
+    }
+
+    const guestRoleId = guestRoleResult[0][0].id
+
+    const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES ('${email}', ${guestRoleId});`
+    await ExecuteQuery(assignRoleQuery)
   }
-
-  const guestRoleId = guestRoleResult[0][0].id
-
-  const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES ('${email}', ${guestRoleId});`
-  await ExecuteQuery(assignRoleQuery)
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

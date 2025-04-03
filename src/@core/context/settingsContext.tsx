@@ -77,8 +77,7 @@ export enum PortalSettingNames {
   auto_managed_capacity = 'auto_managed_capacity',
   scheduled_capacity_enabled = 'scheduled_capacity_enabled',
   browser_tab_title = 'browser_tab_title',
-  sender_email = 'sender_email',
-  power_bi_snapshot_extension = 'power_bi_snapshot_extension'
+  sender_email = 'sender_email'
 }
 
 export type PortalSettingValueType = 'string' | 'date' | 'boolean'

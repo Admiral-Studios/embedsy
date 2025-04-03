@@ -10,8 +10,6 @@ interface Props {
 export const SlackShareModalOption = ({ option, contact }: Props) => {
   if (contact === null) return null
 
-  console.log(contact)
-
   if ('is_channel' in contact === true) {
     return (
       <Box {...option} display='flex' alignItems='center' gap={2} padding={2}>

@@ -116,6 +116,8 @@ export type NangoValuesType = {
   setConnectionId: (connectionId: string) => void | null
   setProviderConfigKey: (providerConfigKey: string) => void | null
   getSessionToken: (arg: NangoConnection) => Promise<void> | null
+  integrations: NangoIntegration[]
+  getIntegrations: () => Promise<void>
 }
 
 export type NangoSync = {

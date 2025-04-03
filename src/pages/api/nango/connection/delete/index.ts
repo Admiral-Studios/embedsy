@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { nango } from '../index'
+import { nango } from '../../index'
 import ExecuteQuery from 'src/utils/db'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
@@ -21,8 +21,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }
 
     const query = `
-      DELETE FROM external_integrations WHERE connection_id = '${connectionId}' AND provider_config_key = '${providerConfigKey}'
-    `
+       DELETE FROM external_integrations WHERE connection_id = '${connectionId}' AND provider_config_key = '${providerConfigKey}'
+     `
     await ExecuteQuery(query)
 
     return response.status(200).json({ ok: true, message: 'Connection deleted' })

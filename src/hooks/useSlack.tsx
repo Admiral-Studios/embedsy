@@ -12,15 +12,17 @@ export const useSlack = () => {
   const [channels, setChannels] = useState<SlackChannel[]>([])
   const [users, setUsers] = useState<SlackUser[]>([])
   const [owner, setOwner] = useState<SlackUser | null>(null)
-  const { connectionId, setConnections, connections } = useContext(NangoContext)
+  const { setConnections, connections } = useContext(NangoContext)
   const { user } = useAuth()
   const nango = new Nango()
-  const isSlackConnected = !!connections.find(item => item.providerConfigKey === 'slack')
+  const currentSlackConnection = connections.find(item => item.providerConfigKey === 'slack')
+
+  const isSlackConnected = !!currentSlackConnection
 
   const getSessionToken = async () => {
     try {
       if (isSlackConnected) {
-        const connection = connections.find(item => item.providerConfigKey === 'slack')
+        const connection = currentSlackConnection
         const connectionId = connection?.connectionId
         const providerConfigKey = connection?.providerConfigKey
 
@@ -88,8 +90,10 @@ export const useSlack = () => {
     try {
       setIsLoading(true)
 
+      const connection = connections.find(({ providerConfigKey }) => providerConfigKey === 'slack')
+
       return axios.post('/api/nango/slack/send_message', {
-        connectionId,
+        connectionId: connection?.connectionId,
         channel,
         text
       })

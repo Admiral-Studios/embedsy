@@ -23,7 +23,7 @@ type Props = {
     pages?: CreationPageType[]
   ) => Promise<'error' | 'success'>
   roleToUpdate: RoleWithUsersPagesType | null
-  allUsersEmails?: string[]
+  allUsersEmails?: { email: string; role: string }[]
 }
 
 const AddRoleModal = ({ open, onClose, handleProcessed, roleToUpdate, allUsersEmails }: Props) => {
@@ -33,7 +33,7 @@ const AddRoleModal = ({ open, onClose, handleProcessed, roleToUpdate, allUsersEm
   const [errMsg, setErrMsg] = useState('')
   const [canRefresh, setCanRefresh] = useState(false)
   const [canExport, setCanExport] = useState(false)
-  const [canManageOwnAccount, setCanManageOwnAccount] = useState(false)
+  const [canManageOwnAccount, setCanManageOwnAccount] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
 
   const [users, setUsers] = useState<string[]>([])
@@ -47,7 +47,7 @@ const AddRoleModal = ({ open, onClose, handleProcessed, roleToUpdate, allUsersEm
     setErrMsg('')
     setCanRefresh(false)
     setCanExport(false)
-    setCanManageOwnAccount(false)
+    setCanManageOwnAccount(true)
     setIsLoading(false)
     setUsers([])
     setPages([])
@@ -295,6 +295,7 @@ const AddRoleModal = ({ open, onClose, handleProcessed, roleToUpdate, allUsersEm
         onClose={() => setOpenAddUserModal(false)}
         handleProcessed={addUsers}
         allUsersEmails={allUsersEmails || []}
+        roleToAssignUser={roleToUpdate}
       />
     </>
   )
