@@ -108,14 +108,13 @@ export type NangoConnection = {
 }
 
 export type NangoValuesType = {
-  sessionToken?: string
   connectionId?: string
   providerConfigKey?: string
   connections: NangoConnection[]
   setConnections: React.Dispatch<React.SetStateAction<NangoConnection[]>>
   setConnectionId: (connectionId: string) => void | null
   setProviderConfigKey: (providerConfigKey: string) => void | null
-  getSessionToken: (arg: NangoConnection) => Promise<void> | null
+  getConnectionByKey: (providerConfigKey: string) => NangoConnection | null
   integrations: NangoIntegration[]
   getIntegrations: () => Promise<void>
 }

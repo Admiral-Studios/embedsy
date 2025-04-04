@@ -5,14 +5,13 @@ import axios from 'axios'
 import { useAuth } from 'src/hooks/useAuth'
 
 const defaultProvider: NangoValuesType = {
-  sessionToken: '',
   connectionId: '',
-  providerConfigKey: 'slack',
+  providerConfigKey: '',
   connections: [],
   setConnections: () => null,
   setConnectionId: () => null,
   setProviderConfigKey: () => null,
-  getSessionToken: () => null,
+  getConnectionByKey: () => null,
   integrations: [],
   getIntegrations: () => Promise.resolve()
 }
@@ -24,13 +23,16 @@ type Props = {
 }
 
 const NangoProvider = ({ children }: Props) => {
-  const [sessionToken, setSessionToken] = useState(defaultProvider.sessionToken)
   const [connections, setConnections] = useState<NangoConnection[]>(defaultProvider.connections)
   const [connectionId, setConnectionId] = useState(defaultProvider.connectionId)
   const [providerConfigKey, setProviderConfigKey] = useState(defaultProvider.providerConfigKey)
   const [integrations, setIntegrations] = useState<NangoIntegration[]>([])
 
   const { user } = useAuth()
+
+  const getConnectionByKey = (key: string): NangoConnection | null => {
+    return connections.find(item => item.providerConfigKey === key) || null
+  }
 
   const getUserConnections = async () => {
     const { data } = await axios.get(`/api/nango/connection/get?userId=${user?.id}`)
@@ -45,31 +47,6 @@ const NangoProvider = ({ children }: Props) => {
     }))
 
     setConnections(result)
-  }
-
-  const getSessionToken = async ({
-    connectionId,
-    providerConfigKey
-  }: {
-    connectionId: string | null
-    providerConfigKey: string | null
-  }) => {
-    try {
-      const response = await axios.post('/api/nango/session_token', {
-        connectionId: connectionId || null,
-        providerConfigKey: providerConfigKey || null
-      })
-
-      if (response.status !== 200) {
-        console.error(response)
-
-        throw new Error('Failed to retrieve session token')
-      }
-      setSessionToken(response.data.sessionToken)
-    } catch (error) {
-      console.error(error)
-      toast.error('Connection failed, please try again later')
-    }
   }
 
   useEffect(() => {
@@ -97,14 +74,13 @@ const NangoProvider = ({ children }: Props) => {
   }, [])
 
   const values = {
-    sessionToken,
     connections,
     setConnections,
     connectionId,
     providerConfigKey,
     setConnectionId,
+    getConnectionByKey,
     setProviderConfigKey,
-    getSessionToken,
     integrations,
     getIntegrations
   }
