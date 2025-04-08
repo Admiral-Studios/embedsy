@@ -1,7 +1,6 @@
 import { useContext, useState } from 'react'
-import {  Grid, Typography } from '@mui/material'
+import { Grid, Typography } from '@mui/material'
 
-import { useSlack } from 'src/hooks/useSlack'
 import SyncsSettingsModal from './_components/SyncsSettingsModal'
 import { NangoContext } from 'src/context/NangoContext'
 import AddNewIntegration from './_components/AddNewIntegration'
@@ -13,9 +12,7 @@ const IntegrationsPage = () => {
   const handleClickOpen = (value: string) => setSelectedIntegration(value)
   const handleClose = () => setSelectedIntegration(null)
 
-  const { owner } = useSlack()
   const { connections, integrations } = useContext(NangoContext)
-
 
   const connectionId = connections.find(
     ({ providerConfigKey }) => providerConfigKey === selectedIntegration
@@ -42,7 +39,11 @@ const IntegrationsPage = () => {
 
           <Grid item xs={12} display='flex' gap={2} flexDirection='column'>
             {integrations?.map(integration => (
-             <IntegrationCard key={integration.provider} integration={integration} openSyncsSettings={handleClickOpen} />
+              <IntegrationCard
+                key={integration.provider}
+                integration={integration}
+                openSyncsSettings={handleClickOpen}
+              />
             ))}
           </Grid>
         </Grid>

@@ -30,10 +30,10 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
     const nangoResponse = await nango.createConnectSession({
       end_user: {
-        id: '3',
-        email: 'admiraldeveloper12@gmail.com'
+        id: process.env.NEXT_PUBLIC_NANGO_USER_ID || '',
+        email: process.env.NEXT_PUBLIC_NANGO_USER_EMAIL || ''
       },
-      allowed_integrations: ['slack']
+      allowed_integrations: [providerConfigKey]
     })
 
     if (!nangoResponse.data.token) {

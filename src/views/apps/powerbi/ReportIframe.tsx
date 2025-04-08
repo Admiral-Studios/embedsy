@@ -104,7 +104,7 @@ const PowerBiIframe = () => {
       }
     }>
   ) => {
-    if (event?.detail?.command === 'shareSlack') {
+    if (event?.detail?.command === 'takeAnAction') {
       if (report) {
         const pages = await report.getPages()
 

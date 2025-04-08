@@ -4,6 +4,7 @@ import { useContext, useEffect } from 'react'
 import { NangoContext } from 'src/context/NangoContext'
 import { NangoIntegration } from 'src/context/types'
 import { useNangoIntegration } from 'src/hooks/nango/useNangoIntegration'
+
 import { useAuth } from 'src/hooks/useAuth'
 
 interface Props {

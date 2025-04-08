@@ -26,7 +26,9 @@ export default async function handler(request: NextApiRequest, response: NextApi
     await ExecuteQuery(query)
 
     return response.status(200).json({ ok: true, message: 'Connection deleted' })
-  } catch (error) {
+  } catch (error: any) {
+    console.log(error?.response?.data)
+
     return response.status(500).json({ ok: false, message: 'Internal server error' })
   }
 }

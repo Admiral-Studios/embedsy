@@ -22,8 +22,8 @@ export const shareSlackCustomCommand = async (report: pbi.Report) => {
         .filter(visual => !visualExceptionTypes.includes(visual.type))
         .map(visual => ({
           command: {
-            name: 'shareSlack',
-            title: 'Share to Slack',
+            name: 'takeAnAction',
+            title: 'Take an action',
             icon: base64Icon,
             selector: {
               $schema: 'http://powerbi.com/product/schema#visualSelector',
@@ -31,7 +31,7 @@ export const shareSlackCustomCommand = async (report: pbi.Report) => {
             },
             extend: {
               visualOptionsMenu: {
-                title: 'Share to Slack',
+                title: 'Take an action',
                 menuLocation: models.MenuLocation.Top
               }
             }

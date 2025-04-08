@@ -69,6 +69,8 @@ const SyncsSettingsModal = ({ integration, handleClose, connectionId }: Props) =
     setSyncs(newSyncs)
   }
 
+  console.log(integration)
+
   const getSyncs = async () => {
     try {
       setLoading(true)
@@ -91,8 +93,13 @@ const SyncsSettingsModal = ({ integration, handleClose, connectionId }: Props) =
     }
   }, [integration])
 
+  const closeModal = () => {
+    handleClose()
+    setSyncs([])
+  }
+
   return (
-    <Dialog open={!!integration} onClose={handleClose} maxWidth={'md'} sx={{ overflow: 'hidden' }}>
+    <Dialog open={!!integration} onClose={closeModal} maxWidth={'md'} sx={{ overflow: 'hidden' }}>
       <DialogTitle id='alert-dialog-title'>Syncs settings</DialogTitle>
 
       <DialogContent sx={{ gap: '10px', display: 'flex', flexDirection: 'column', minWidth: '800px' }}>
@@ -150,7 +157,7 @@ const SyncsSettingsModal = ({ integration, handleClose, connectionId }: Props) =
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>Close</Button>
+        <Button onClick={closeModal}>Close</Button>
         <Button onClick={handleSave} autoFocus>
           Save
         </Button>
