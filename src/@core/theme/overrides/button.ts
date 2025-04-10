@@ -1,5 +1,5 @@
 // ** Type Import
-import { OwnerStateThemeType } from './'
+import { OwnerStateThemeType } from '.'
 
 // ** Theme Config Imports
 import themeConfig from 'src/configs/themeConfig'

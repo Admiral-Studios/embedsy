@@ -1,4 +1,4 @@
-import { OwnerStateThemeType } from './'
+import { OwnerStateThemeType } from '.'
 
 const FabButton = () => {
   return {

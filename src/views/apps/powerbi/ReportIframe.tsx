@@ -14,9 +14,8 @@ import { usePBITheme } from 'src/hooks/powerbi/usePBITheme'
 import { useSettings } from 'src/@core/hooks/useSettings'
 import { preloadThemes } from 'src/utils/powerbi/preloadPBI'
 import { ReportTypes } from 'src/enums/pageTypes'
-import { shareSlackCustomCommand } from 'src/utils/shareSlackCustomCommand'
-import { useSlack } from 'src/hooks/useSlack'
-import SlackShareModal from 'src/components/shared/Slack/SlackShareModal'
+import { takeActionCustomCommand } from 'src/utils/shareSlackCustomCommand'
+import SlackShareModal from 'src/components/shared/Integrations/ShareDataModal'
 import { powerBiConfigSettings } from 'src/configs/powerbi'
 
 const fetcher = (url: string, email: string, datasetId: string, rowLevelRole: string) =>
@@ -38,7 +37,6 @@ const PowerBiIframe = () => {
   const [isPageChangingFromReport, setIsPageChangingFromReport] = useState(false)
   const [isThemeInitialized, setIsThemeInitialized] = useState(false)
   const [slackShareData, setSlackShareData] = useState<string | null>(null)
-  const { owner } = useSlack()
 
   const tokenManagerInitialized = useRef(false)
   const currentReportId = useRef<any>('')
@@ -48,8 +46,6 @@ const PowerBiIframe = () => {
   const { user } = useAuth()
   const theme = useTheme()
   const { appBranding } = useSettings()
-
-  const isSlackShareEnabled = Boolean(owner?.id)
 
   useEffect(() => {
     const preloadReportThemes = async () => {
@@ -263,7 +259,7 @@ const PowerBiIframe = () => {
           setReport(embeddedReport as pbi.Report)
           setContextReport(embeddedReport as pbi.Report)
 
-          if (isSlackShareEnabled) shareSlackCustomCommand(embeddedReport as pbi.Report)
+          takeActionCustomCommand(embeddedReport as pbi.Report)
         }
       }
     },
@@ -340,9 +336,7 @@ const PowerBiIframe = () => {
                   'rendered',
                   (_: any, r: any) => {
                     const renderExtensions = async () => {
-                      if (isSlackShareEnabled) {
-                        await shareSlackCustomCommand(r)
-                      }
+                      await takeActionCustomCommand(r)
                     }
 
                     renderExtensions()

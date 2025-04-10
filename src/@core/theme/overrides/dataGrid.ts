@@ -1,5 +1,5 @@
 // ** Type Import
-import { OwnerStateThemeType } from './'
+import { OwnerStateThemeType } from '.'
 
 const DataGrid = () => {
   return {

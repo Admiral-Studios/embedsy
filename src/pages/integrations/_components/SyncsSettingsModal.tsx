@@ -87,9 +87,20 @@ const SyncsSettingsModal = ({ integration, handleClose, connectionId }: Props) =
     }
   }
 
+  const getScripts = async () => {
+    try {
+      const scripts = await axios.get('api/nango/integrations/scripts')
+
+      console.log(scripts)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   useEffect(() => {
     if (integration && connectionId) {
       getSyncs()
+      getScripts()
     }
   }, [integration])
 

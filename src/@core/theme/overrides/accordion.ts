@@ -1,5 +1,5 @@
 // ** Type Import
-import { OwnerStateThemeType } from './'
+import { OwnerStateThemeType } from '.'
 
 // ** Hook Import
 import { useSettings } from 'src/@core/hooks/useSettings'

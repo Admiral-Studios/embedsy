@@ -7,7 +7,7 @@ const base64Icon =
 
 const visualExceptionTypes = ['text', 'image', 'textbox', 'shape']
 
-export const shareSlackCustomCommand = async (report: pbi.Report) => {
+export const takeActionCustomCommand = async (report: pbi.Report) => {
   try {
     if (report) {
       const pages = await report.getPages()

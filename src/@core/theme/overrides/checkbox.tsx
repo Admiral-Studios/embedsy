@@ -2,7 +2,7 @@
 import { useTheme } from '@mui/material/styles'
 
 // ** Type Import
-import { OwnerStateThemeType } from './'
+import { OwnerStateThemeType } from '.'
 
 const CheckedIcon = () => {
   const theme = useTheme()

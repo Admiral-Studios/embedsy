@@ -19,17 +19,17 @@ const IntegrationCard = ({ integration, openSyncsSettings }: Props) => {
 
   const isConnected = connections.find(connection => connection.providerConfigKey === integration.provider)
 
-  const getScripts = async () => {
-    try {
-      const scripts = await axios.get('api/nango/scripts')
-      console.log(scripts)
-    } catch (error) {
-      console.log(error)
-    }
-  }
+  // const getScripts = async () => {
+  //   try {
+  //     const scripts = await axios.get('api/nango/scripts')
+  //     console.log(scripts)
+  //   } catch (error) {
+  //     console.log(error)
+  //   }
+  // }
 
   useEffect(() => {
-    getScripts()
+    // getScripts()
   }, [])
 
   return (
