@@ -1,13 +1,13 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material'
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from '@mui/material'
 import { useContext, useEffect, useState } from 'react'
-import { useSlack } from 'src/hooks/useSlack'
-import AutocompleteInput from '../AutocompleteInput'
-import { SlackShareModalOption } from './SlackShareModalOption'
 import toast from 'react-hot-toast'
-import { NangoSyncConfig, NangoSyncModel, StandardNangoConfig } from '@nangohq/node'
+import { NangoSyncConfig, StandardNangoConfig } from '@nangohq/node'
 import axios from 'axios'
-import CustomTextField from 'src/@core/components/mui/text-field'
 import { NangoContext } from 'src/context/NangoContext'
+import { csvToDataGrid } from 'src/utils/csvToDataGrid'
+import { DataGrid } from '@mui/x-data-grid'
+import SlackTab from './SlackTab/SlackTab'
+import GoogleMailTab from './ShareDataModalTabs/GoogleMailTab'
 
 type Props = {
   open: boolean
@@ -16,23 +16,15 @@ type Props = {
 }
 
 const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
-  // const [activeContacts, setActiveContacts] = useState<string[]>([])
-
-  // const { users, channels, sendMessage } = useSlack()
-  // const contacts = [...users, ...channels]
-
   const { connections } = useContext(NangoContext)
-
   const [scripts, setScripts] = useState<StandardNangoConfig[]>([])
+  const [selectedTab, setSelectedTab] = useState(0)
 
   const [selectedScript, setSelectedScript] = useState<NangoSyncConfig | null>(null)
   const [selectedProvider, setSelectedProvider] = useState('')
 
   const [body, setBody] = useState<{ [key: string]: string }>({})
-
-  // const onChange = (values: string[]) => {
-  //   setActiveContacts(values)
-  // }
+  const { columns, rows } = csvToDataGrid(sharedData)
 
   const shareData = async () => {
     try {
@@ -71,94 +63,55 @@ const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
     }
   }
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setSelectedTab(newValue)
+  }
+
   useEffect(() => {
     if (open) {
       getScripts()
     }
   }, [open])
 
-  console.log(scripts)
-
   return (
-    <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth='xl' fullWidth>
       <DialogTitle>Share to Slack</DialogTitle>
 
       <DialogContent>
         <Box
           sx={{
-            maxHeight: '200px',
             overflowY: 'auto'
           }}
         >
-          {sharedData}
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            editMode='row'
+            getRowHeight={() => null}
+            sx={() => ({
+              height: 500
+            })}
+          />
         </Box>
 
-        {/* <AutocompleteInput
-          multiple
-          freeSolo
-          options={contacts.map(contact => contact.name)}
-          placeholder='Add contacts to share data. Press "Enter" after each email.'
-          onChange={onChange}
-          value={activeContacts}
-          getOptionLabel={option => option}
-          renderOption={option => {
-            return (
-              <SlackShareModalOption
-                key={option.key}
-                option={option}
-                contact={contacts.find(contact => contact.name === option.key) || null}
-              />
-            )
-          }}
-        /> */}
+        <Tabs value={selectedTab} onChange={handleTabChange} sx={{ backgroundColor: 'white' }}>
+          {scripts.map(script => (
+            <Tab
+              key={script.provider}
+              label={script.provider ? script.provider.charAt(0).toUpperCase() + script.provider.slice(1) : ''}
+              value={String(scripts.indexOf(script))}
+              sx={{
+                '&.Mui-selected': {
+                  color: '#FFC815 !important'
+                }
+              }}
+            />
+          ))}
+        </Tabs>
 
-        {scripts.map(script => (
-          <Box key={script.providerConfigKey} sx={{ py: 4 }}>
-            <Typography color='primary'>{script.provider}</Typography>
+        {Number(selectedTab) === 0 && <SlackTab />}
 
-            {script.actions
-              .filter(action => action.endpoints[0].method === 'POST')
-              .map(action => (
-                <Box key={action.name} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Box>
-                    <Box>
-                      {action.name} | {action.endpoints[0].method}
-                    </Box>
-                    <Box>{action.description}</Box>
-                  </Box>
-
-                  <Button
-                    onClick={() => {
-                      setSelectedScript(action)
-                      setSelectedProvider(script.providerConfigKey)
-                    }}
-                  >
-                    Use
-                  </Button>
-                </Box>
-              ))}
-          </Box>
-        ))}
-
-        {selectedScript && (
-          <Box>
-            <Typography>{selectedScript.input?.name}</Typography>
-
-            <Typography>{selectedScript.input?.description}</Typography>
-
-            {selectedScript.input?.fields.map(field => (
-              <CustomTextField
-                key={field.name}
-                fullWidth
-                label={field.name}
-                placeholder={field.name}
-                value={body[field.name]}
-                onChange={e => setBody({ ...body, [field.name]: e.target.value })}
-                sx={{ py: 2 }}
-              />
-            ))}
-          </Box>
-        )}
+        {Number(selectedTab) === 1 && <GoogleMailTab />}
       </DialogContent>
 
       <DialogActions>

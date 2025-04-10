@@ -1,13 +1,13 @@
-import { Icon } from '@iconify/react'
 import { Box, Typography } from '@mui/material'
 import { SlackChannel, SlackUser } from 'src/types/apps/slackTypes'
+import { Icon } from '@iconify/react'
 
 interface Props {
   option: any
   contact: SlackChannel | SlackUser | null
 }
 
-export const SlackShareModalOption = ({ option, contact }: Props) => {
+const SlackAutoCompleteOption = ({ option, contact }: Props) => {
   if (contact === null) return null
 
   if ('is_channel' in contact === true) {
@@ -71,3 +71,5 @@ export const SlackShareModalOption = ({ option, contact }: Props) => {
 
   return null
 }
+
+export default SlackAutoCompleteOption
