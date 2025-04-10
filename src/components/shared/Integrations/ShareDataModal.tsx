@@ -7,7 +7,7 @@ import { NangoContext } from 'src/context/NangoContext'
 import { csvToDataGrid } from 'src/utils/csvToDataGrid'
 import { DataGrid } from '@mui/x-data-grid'
 import SlackTab from './SlackTab/SlackTab'
-import GoogleMailTab from './ShareDataModalTabs/GoogleMailTab'
+import GoogleMailTab from './GoogleMailTab/GoogleMailTab'
 
 type Props = {
   open: boolean
