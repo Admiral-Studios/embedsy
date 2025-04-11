@@ -1,9 +1,7 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Tab, Tabs } from '@mui/material'
-import { useContext, useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
-import { NangoSyncConfig, StandardNangoConfig } from '@nangohq/node'
+import { Box, CircularProgress, Dialog, DialogContent, DialogTitle, Tab, Tabs } from '@mui/material'
+import { useEffect, useState } from 'react'
+import { StandardNangoConfig } from '@nangohq/node'
 import axios from 'axios'
-import { NangoContext } from 'src/context/NangoContext'
 import { csvToDataGrid } from 'src/utils/csvToDataGrid'
 import { DataGrid } from '@mui/x-data-grid'
 import SlackTab from './SlackTab/SlackTab'
@@ -16,54 +14,25 @@ type Props = {
 }
 
 const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
-  const { connections } = useContext(NangoContext)
+  const [isLoading, setIsLoading] = useState(false)
   const [scripts, setScripts] = useState<StandardNangoConfig[]>([])
-  const [selectedTab, setSelectedTab] = useState(0)
-
-  const [selectedScript, setSelectedScript] = useState<NangoSyncConfig | null>(null)
-  const [selectedProvider, setSelectedProvider] = useState('')
-
-  const [body, setBody] = useState<{ [key: string]: string }>({})
+  const [selectedTab, setSelectedTab] = useState<string>('0')
   const { columns, rows } = csvToDataGrid(sharedData)
-
-  const shareData = async () => {
-    try {
-      const connectionId = connections.find(c => c.providerConfigKey === selectedProvider)?.connectionId
-
-      if (!connectionId) {
-        throw new Error('Failed to find connection')
-      }
-
-      const res = await axios.post('/api/nango/share_data', {
-        connectionId,
-        provider: selectedProvider,
-        body,
-        actionName: selectedScript?.name
-      })
-
-      console.log(res)
-    } catch (e) {
-      console.error(e)
-      toast.error('Failed to share data')
-    } finally {
-      onClose()
-      setBody({})
-      setSelectedProvider('')
-      setSelectedScript(null)
-    }
-  }
 
   const getScripts = async () => {
     try {
+      setIsLoading(true)
       const res = await axios.get('/api/nango/integrations/scripts')
 
       setScripts(res.data.scriptsConfig)
     } catch (error) {
       console.log(error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
     setSelectedTab(newValue)
   }
 
@@ -75,54 +44,61 @@ const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth='xl' fullWidth>
-      <DialogTitle>Share to Slack</DialogTitle>
+      <DialogTitle>Share Data</DialogTitle>
 
-      <DialogContent>
+      {isLoading ? (
         <Box
           sx={{
-            overflowY: 'auto'
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '600px'
           }}
         >
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            editMode='row'
-            getRowHeight={() => null}
-            sx={() => ({
-              height: 500
-            })}
-          />
+          <CircularProgress sx={{ color: '#FFC815' }} />
         </Box>
-
-        <Tabs value={selectedTab} onChange={handleTabChange} sx={{ backgroundColor: 'white' }}>
-          {scripts.map(script => (
-            <Tab
-              key={script.provider}
-              label={script.provider ? script.provider.charAt(0).toUpperCase() + script.provider.slice(1) : ''}
-              value={String(scripts.indexOf(script))}
+      ) : (
+        <>
+          <DialogContent>
+            <Box
               sx={{
-                '&.Mui-selected': {
-                  color: '#FFC815 !important'
-                }
+                overflowY: 'auto'
               }}
-            />
-          ))}
-        </Tabs>
+            >
+              <DataGrid
+                rows={rows}
+                columns={columns}
+                editMode='row'
+                getRowHeight={() => null}
+                sx={() => ({
+                  height: 500
+                })}
+              />
+            </Box>
 
-        {Number(selectedTab) === 0 && <SlackTab />}
+            <Tabs value={selectedTab} onChange={handleTabChange} sx={{ backgroundColor: 'white' }}>
+              {scripts.map(script => (
+                <Tab
+                  key={script.provider}
+                  label={script.provider ? script.provider.charAt(0).toUpperCase() + script.provider.slice(1) : ''}
+                  value={String(scripts.indexOf(script))}
+                  sx={{
+                    '&.Mui-selected': {
+                      color: '#FFC815 !important'
+                    }
+                  }}
+                />
+              ))}
+            </Tabs>
+          </DialogContent>
 
-        {Number(selectedTab) === 1 && <GoogleMailTab />}
-      </DialogContent>
+          {selectedTab === '0' && <SlackTab setIsLoading={setIsLoading} onClose={onClose} sharedData={sharedData} />}
 
-      <DialogActions>
-        <Button color='error' onClick={onClose}>
-          Close
-        </Button>
-
-        <Button variant='contained' color='primary' onClick={shareData} disabled={!selectedProvider || !selectedScript}>
-          Share
-        </Button>
-      </DialogActions>
+          {selectedTab === '1' && (
+            <GoogleMailTab setIsLoading={setIsLoading} onClose={onClose} sharedData={sharedData} />
+          )}
+        </>
+      )}
     </Dialog>
   )
 }
