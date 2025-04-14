@@ -3,8 +3,13 @@ import axios from 'axios'
 import { useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { NangoContext } from 'src/context/NangoContext'
-import { NangoIntegration } from 'src/context/types'
+import { NangoConnection, NangoIntegration } from 'src/context/types'
 import { useAuth } from '../useAuth'
+
+export interface NangoConnectCredentials {
+  oauth_client_id_override: string
+  oauth_client_secret_override: string
+}
 
 export const useNangoIntegration = () => {
   const [integrations, setIntegrations] = useState<NangoIntegration[]>([])
@@ -63,6 +68,32 @@ export const useNangoIntegration = () => {
     }
   }
 
+  const saveConnectionToDB = async (connectionId: string, providerConfigKey: string) => {
+    try {
+      const { data } = await axios.post('/api/nango/connection/create', {
+        userId: user?.id,
+        connectionId,
+        connectionUserId: 'test',
+        connectionUserEmail: user?.email,
+        providerConfigKey
+      })
+
+      if (!data.ok) throw new Error(data.message)
+
+      setConnections((prevConnections: NangoConnection[]) => [
+        ...prevConnections,
+        {
+          connectionId,
+          providerConfigKey
+        } as NangoConnection
+      ])
+      toast.success(`${providerConfigKey} connected successfully`)
+    } catch (error) {
+      console.error(error)
+      toast.error(`${providerConfigKey} connection failed, please try again later`)
+    }
+  }
+
   const connectIntegration = async (providerConfigKey: string) => {
     console.log(providerConfigKey)
     const sessionToken = await getSessionToken(providerConfigKey)
@@ -77,34 +108,43 @@ export const useNangoIntegration = () => {
       onEvent: async event => {
         if (event.type === 'connect') {
           const { connectionId, providerConfigKey } = event.payload
-          try {
-            const { data } = await axios.post('/api/nango/connection/create', {
-              userId: user?.id,
-              connectionId,
-              connectionUserEmail: user?.email,
-              providerConfigKey,
-              connectionUserId: process.env.NEXT_PUBLIC_NANGO_USER_ID || ''
-            })
-
-            if (!data.ok) throw new Error(data.message)
-
-            setConnections(prevConnections => [
-              ...prevConnections,
-              {
-                connectionId,
-                providerConfigKey
-              }
-            ])
-            toast.success(`${providerConfigKey} connected successfully`)
-          } catch (error) {
-            console.error(error)
-            toast.error(`${providerConfigKey} connection failed, please try again later`)
-          }
+          saveConnectionToDB(connectionId, providerConfigKey)
         }
       }
     })
   }
 
+  const connectIntegrationWithCredentials = async (
+    providerConfigKey: string | null,
+    credentials: NangoConnectCredentials
+  ) => {
+    if (!providerConfigKey) {
+      toast.error('Connection failed, please try again later')
+
+      return
+    }
+
+    const connectSessionToken = await getSessionToken(providerConfigKey)
+
+    const nango = new Nango({ connectSessionToken })
+
+    return await nango
+      .auth(providerConfigKey, {
+        credentials
+      })
+      .then(result => {
+        const { connectionId, providerConfigKey } = result
+        saveConnectionToDB(connectionId, providerConfigKey)
+
+        toast.success(`${providerConfigKey} connected successfully`)
+
+        return result
+      })
+      .catch(error => {
+        toast.error(`${providerConfigKey} connection failed, please try again later`)
+        console.error(error)
+      })
+  }
   const disconnectIntegration = async (providerConfigKey: string) => {
     try {
       const connection = getConnectionByKey(providerConfigKey)
@@ -132,6 +172,7 @@ export const useNangoIntegration = () => {
   return {
     integrations,
     connectIntegration,
+    connectIntegrationWithCredentials,
     disconnectIntegration
   }
 }

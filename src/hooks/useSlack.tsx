@@ -1,60 +1,17 @@
-import Nango from '@nangohq/frontend'
 import axios from 'axios'
 import { useContext, useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
 import { NangoContext } from 'src/context/NangoContext'
-import { NangoConnection } from 'src/context/types'
 import { SlackChannel, SlackUser } from 'src/types/apps/slackTypes'
-import { useAuth } from './useAuth'
 
 export const useSlack = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [channels, setChannels] = useState<SlackChannel[]>([])
   const [users, setUsers] = useState<SlackUser[]>([])
   const [owner, setOwner] = useState<SlackUser | null>(null)
-  const { setConnections, connections } = useContext(NangoContext)
-  const { user } = useAuth()
-  const nango = new Nango()
+  const { connections } = useContext(NangoContext)
   const currentSlackConnection = connections.find(item => item.providerConfigKey === 'slack')
 
   const isSlackConnected = !!currentSlackConnection
-
-  const getSessionToken = async () => {
-    try {
-      if (isSlackConnected) {
-        const connection = currentSlackConnection
-        const connectionId = connection?.connectionId
-        const providerConfigKey = connection?.providerConfigKey
-
-        const response = await axios.post('/api/nango/session_token', {
-          connectionId: connectionId || null,
-          providerConfigKey: providerConfigKey || null
-        })
-
-        if (response.status !== 200) {
-          throw new Error('Failed to retrieve session token')
-        }
-
-        return response.data.sessionToken
-      } else {
-        const response = await axios.post('/api/nango/session_token', {
-          connectionId: null,
-          providerConfigKey: null
-        })
-
-        if (response.status !== 200) {
-          throw new Error('Failed to retrieve session token')
-        }
-
-        return response.data.sessionToken
-      }
-    } catch (error) {
-      console.error(error)
-      toast.error('Connection failed, please try again later')
-
-      return null
-    }
-  }
 
   const getChannels = async () => {
     try {
@@ -106,67 +63,6 @@ export const useSlack = () => {
     }
   }
 
-  const connectSlack = async () => {
-    const sessionToken = await getSessionToken()
-
-    nango.openConnectUI({
-      sessionToken,
-      onEvent: async event => {
-        if (event.type === 'connect') {
-          const { connectionId, providerConfigKey } = event.payload
-          try {
-            const { data } = await axios.post('/api/nango/connection/create', {
-              userId: user?.id,
-              connectionId,
-              connectionUserId: 'test',
-              connectionUserEmail: user?.email,
-              providerConfigKey
-            })
-
-            if (!data.ok) throw new Error(data.message)
-
-            setConnections((prevConnections: NangoConnection[]) => [
-              ...prevConnections,
-              {
-                connectionId,
-                providerConfigKey
-              } as NangoConnection
-            ])
-            toast.success('Slack connected successfully')
-          } catch (error) {
-            console.error(error)
-            toast.error('Slack connection failed, please try again later')
-          }
-        }
-      }
-    })
-  }
-
-  const disconnectSlack = async () => {
-    try {
-      const connection = connections.find(item => item.providerConfigKey === 'slack')
-
-      if (connection) {
-        const connectionId = connection?.connectionId
-        const providerConfigKey = connection?.providerConfigKey
-
-        const resp = await axios.delete('/api/nango/connection/delete', {
-          data: {
-            connectionId,
-            providerConfigKey
-          }
-        })
-
-        if (resp.data.ok) {
-          setConnections(connections.filter(item => item.providerConfigKey !== 'slack'))
-          toast.success('Slack disconnected successfully')
-        }
-      }
-    } catch (error) {
-      toast.error('Slack disconnection failed, please try again later')
-    }
-  }
-
   useEffect(() => {
     if (isSlackConnected) {
       getContacts()
@@ -179,8 +75,6 @@ export const useSlack = () => {
     channels,
     users,
     owner,
-    sendMessage,
-    connectSlack,
-    disconnectSlack
+    sendMessage
   }
 }
