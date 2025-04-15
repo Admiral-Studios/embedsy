@@ -3,22 +3,24 @@ import { useState } from 'react'
 
 import toast from 'react-hot-toast'
 import AutocompleteInput from '../../AutocompleteInput'
-import { SlackAutocompleteOption } from './SlackAutoCompleteOption'
+
 import { useSlack } from 'src/hooks/useSlack'
 
+import { SlackAutocompleteOption } from './SlackAutocompleteOption'
 import { csvToMarkdown } from 'src/utils/csvToMarkdown'
+import { GridColumnVisibilityModel } from '@mui/x-data-grid'
 
 interface SlackTabProps {
   onClose: () => void
   sharedData: string | null
   setIsLoading: (isLoading: boolean) => void
+  columnVisibility: GridColumnVisibilityModel
 }
 
-const SlackTab = ({ onClose, sharedData, setIsLoading }: SlackTabProps) => {
+const SlackTab = ({ onClose, sharedData, setIsLoading, columnVisibility }: SlackTabProps) => {
   const [activeContacts, setActiveContacts] = useState<string[]>([])
   const { users, channels, sendMessage } = useSlack()
   const contacts = [...users, ...channels]
-  const messageChunks = csvToMarkdown(sharedData)
 
   const onChange = (values: string[]) => {
     setActiveContacts(values)
@@ -26,17 +28,17 @@ const SlackTab = ({ onClose, sharedData, setIsLoading }: SlackTabProps) => {
 
   const shareData = async () => {
     setIsLoading(true)
+
+    const messageChunks = csvToMarkdown(sharedData, 3500, columnVisibility)
+
     try {
       const requests = activeContacts.map(async channel => {
         const contactId = contacts.find(contact => contact.name === channel)?.id || ''
-
         for (const message of messageChunks) {
           await sendMessage(contactId, message || 'Nango test message')
         }
       })
-
       const responses = await Promise.all(requests.flat())
-
       if (responses.length === 1) {
         return toast.success('Message sent successfully')
       } else {
@@ -47,6 +49,7 @@ const SlackTab = ({ onClose, sharedData, setIsLoading }: SlackTabProps) => {
       toast.error('Failed to share data')
     } finally {
       setActiveContacts([])
+
       onClose()
       setIsLoading(false)
     }
@@ -54,7 +57,7 @@ const SlackTab = ({ onClose, sharedData, setIsLoading }: SlackTabProps) => {
 
   return (
     <>
-      <Box sx={{ px: 11, pb: 6 }}>
+      <Box>
         <AutocompleteInput
           multiple
           freeSolo
@@ -80,7 +83,7 @@ const SlackTab = ({ onClose, sharedData, setIsLoading }: SlackTabProps) => {
           Close
         </Button>
 
-        <Button variant='contained' color='primary' onClick={shareData}>
+        <Button variant='contained' color='primary' onClick={shareData} disabled={!activeContacts.length}>
           Share
         </Button>
       </DialogActions>

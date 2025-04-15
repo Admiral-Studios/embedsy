@@ -1,10 +1,11 @@
-import { Button, Card, CardContent, CircularProgress, Typography } from '@mui/material'
-import { useContext, useState } from 'react'
+import { Button, Card, CardContent, Typography } from '@mui/material'
+import axios from 'axios'
+import { useContext, useEffect } from 'react'
 import { NangoContext } from 'src/context/NangoContext'
 import { NangoIntegration } from 'src/context/types'
 import { useNangoIntegration } from 'src/hooks/nango/useNangoIntegration'
+
 import { useAuth } from 'src/hooks/useAuth'
-import { ConnectIntegrationModal } from './ConnectIntegrationModal'
 
 interface Props {
   integration: NangoIntegration
@@ -12,24 +13,24 @@ interface Props {
 }
 
 const IntegrationCard = ({ integration, openSyncsSettings }: Props) => {
-  const [isLoading, setIsLoading] = useState(false)
-  const [integrationToConnect, setIntegrationToConnect] = useState<string | null>(null)
-
   const { hasAdminPrivileges } = useAuth()
   const { connections } = useContext(NangoContext)
-  const { disconnectIntegration } = useNangoIntegration()
-
-  const closeConnectModal = () => {
-    setIntegrationToConnect(null)
-  }
-
-  const disconnect = async (provider: string) => {
-    setIsLoading(true)
-    await disconnectIntegration(provider)
-    setIsLoading(false)
-  }
+  const { connectIntegration, disconnectIntegration } = useNangoIntegration()
 
   const isConnected = connections.find(connection => connection.providerConfigKey === integration.provider)
+
+  // const getScripts = async () => {
+  //   try {
+  //     const scripts = await axios.get('api/nango/scripts')
+  //     console.log(scripts)
+  //   } catch (error) {
+  //     console.log(error)
+  //   }
+  // }
+
+  useEffect(() => {
+    // getScripts()
+  }, [])
 
   return (
     <Card key={integration.display_name}>
@@ -37,6 +38,8 @@ const IntegrationCard = ({ integration, openSyncsSettings }: Props) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <img src={integration.logo} width={35} height={35} alt={integration?.display_name} />
           <Typography variant='h4'>{integration?.display_name}</Typography>
+
+          {/* <Typography marginLeft={3}>{owner?.profile?.email}</Typography> */}
         </div>
         {hasAdminPrivileges && (
           <Button
@@ -49,17 +52,15 @@ const IntegrationCard = ({ integration, openSyncsSettings }: Props) => {
         )}
 
         {isConnected ? (
-          <Button variant='outlined' onClick={() => disconnect(integration.provider)} disabled={isLoading}>
-            {isLoading ? <CircularProgress size={20} /> : 'Disconnect'}
+          <Button variant='outlined' onClick={() => disconnectIntegration(integration.provider)}>
+            Disconnect
           </Button>
         ) : (
-          <Button variant='contained' onClick={() => setIntegrationToConnect(integration.provider)}>
+          <Button variant='contained' onClick={() => connectIntegration(integration.provider)}>
             Connect
           </Button>
         )}
       </CardContent>
-
-      <ConnectIntegrationModal integrationToConnect={integrationToConnect} onClose={closeConnectModal} />
     </Card>
   )
 }

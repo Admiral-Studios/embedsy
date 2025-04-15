@@ -1,3 +1,8 @@
+export type Row = {
+  id: number
+  [key: string]: string | number
+}
+
 export const csvToDataGrid = (csv: string | null) => {
   if (!csv || typeof csv !== 'string') return { columns: [], rows: [] }
 
@@ -11,7 +16,7 @@ export const csvToDataGrid = (csv: string | null) => {
     flex: 1
   }))
 
-  const data = rows.map((line, index) => {
+  const data: Row[] = rows.map((line, index) => {
     const values = line.split(',')
 
     return {

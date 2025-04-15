@@ -1,11 +1,11 @@
 import { Box, CircularProgress, Dialog, DialogContent, DialogTitle, Tab, Tabs } from '@mui/material'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { StandardNangoConfig } from '@nangohq/node'
 import axios from 'axios'
-import { csvToDataGrid } from 'src/utils/csvToDataGrid'
-import { DataGrid } from '@mui/x-data-grid'
-import SlackTab from './SlackTab/SlackTab'
+import { DataGrid, GridColumnVisibilityModel } from '@mui/x-data-grid'
 import GoogleMailTab from './GoogleMailTab/GoogleMailTab'
+import SlackTab from './SlackTab/SlackTab'
+import { csvToDataGrid } from 'src/utils/csvToDataGrid'
 
 type Props = {
   open: boolean
@@ -16,8 +16,13 @@ type Props = {
 const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
   const [isLoading, setIsLoading] = useState(false)
   const [scripts, setScripts] = useState<StandardNangoConfig[]>([])
-  const [selectedTab, setSelectedTab] = useState<string>('0')
-  const { columns, rows } = csvToDataGrid(sharedData)
+  const [selectedTab, setSelectedTab] = useState('slack')
+
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>({})
+
+  const { columns, rows } = useMemo(() => csvToDataGrid(sharedData), [sharedData])
+
+  console.log(columns, rows)
 
   const getScripts = async () => {
     try {
@@ -73,6 +78,8 @@ const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
                 sx={() => ({
                   height: 500
                 })}
+                columnVisibilityModel={columnVisibilityModel}
+                onColumnVisibilityModelChange={newModel => setColumnVisibilityModel(newModel)}
               />
             </Box>
 
@@ -81,7 +88,7 @@ const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
                 <Tab
                   key={script.provider}
                   label={script.provider ? script.provider.charAt(0).toUpperCase() + script.provider.slice(1) : ''}
-                  value={String(scripts.indexOf(script))}
+                  value={script.provider}
                   sx={{
                     '&.Mui-selected': {
                       color: '#FFC815 !important'
@@ -92,11 +99,26 @@ const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
             </Tabs>
           </DialogContent>
 
-          {selectedTab === '0' && <SlackTab setIsLoading={setIsLoading} onClose={onClose} sharedData={sharedData} />}
+          <Box sx={{ px: 11, pb: 6 }}>
+            {selectedTab === 'slack' && (
+              <SlackTab
+                setIsLoading={setIsLoading}
+                onClose={onClose}
+                sharedData={sharedData}
+                columnVisibility={columnVisibilityModel}
+              />
+            )}
 
-          {selectedTab === '1' && (
-            <GoogleMailTab setIsLoading={setIsLoading} onClose={onClose} sharedData={sharedData} />
-          )}
+            {selectedTab === 'google-mail' && (
+              <GoogleMailTab
+                setIsLoading={setIsLoading}
+                onClose={onClose}
+                sharedData={sharedData}
+                rows={rows}
+                columnVisibility={columnVisibilityModel}
+              />
+            )}
+          </Box>
         </>
       )}
     </Dialog>
@@ -104,6 +126,18 @@ const ShareDataModal = ({ open, onClose, sharedData }: Props) => {
 }
 
 export default ShareDataModal
+
+// What need To Do
+// 1. the ability to display fields for the body of the request adaptively.
+// For example, if the field type is an array of strings, then add the text "Write values ​​separated by commas" to the placeholder.
+//
+// 2. each field has an "optional" value. I suggest that when you click on the button,
+// validate the values ​​using this field and also by the presence of this value in the state of the body
+//
+// 3.to filter the desired POST endpoints, add an array with key phrases and words, for example [send, send message, send data, ...etc].
+// Then filter these endpoints by the array of key phrases and the description for the endpoint
+//
+// 4.T o send a message to slack we need to get the channel ID using another endpoint, we also need to process this
 
 // What need To Do
 // 1. the ability to display fields for the body of the request adaptively.

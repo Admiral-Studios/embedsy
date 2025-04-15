@@ -1,15 +1,33 @@
-import { csvToDataGrid } from './csvToDataGrid'
+import { GridColumnVisibilityModel } from '@mui/x-data-grid'
+import { csvToDataGrid } from 'src/utils/csvToDataGrid'
 
 type Column = { field: string; headerName: string }
 type Row = Record<string, string | number | undefined>
 
-export function csvToMarkdown(csv: string | null, chunkSize = 3500): string[] {
+export function csvToMarkdown(
+  csv: string | null,
+  chunkSize = 3500,
+  columnVisibility: GridColumnVisibilityModel
+): string[] {
   const { columns, rows }: { columns: Column[]; rows: Row[] } = csvToDataGrid(csv)
 
-  const headers = columns.map(col => col.headerName)
+  const filteredColumns = columns.filter(({ field }) => columnVisibility[field] !== false)
+  const filteredRows = rows.map(row => {
+    const newRow = { ...row }
 
-  const dataRows: string[][] = rows.map(row =>
-    columns.map(col => {
+    Object.entries(columnVisibility).forEach(([key, value]) => {
+      if (!value) {
+        delete newRow[key]
+      }
+    })
+
+    return newRow
+  })
+
+  const headers = filteredColumns.map(col => col.headerName)
+
+  const dataRows: string[][] = filteredRows.map(row =>
+    filteredColumns.map(col => {
       const value = row[col.field]
 
       return value !== undefined && value !== null ? String(value).replace(/\r/g, '') : ''
