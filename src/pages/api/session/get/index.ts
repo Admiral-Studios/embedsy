@@ -5,9 +5,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { userId } = req.body as { userId: string }
 
-    const getCreatedSessionQuery = `SELECT TOP 1 * FROM user_activity WHERE user_id='${userId}' ORDER BY login_at DESC;`
-
-    const createdSession = await ExecuteQuery(getCreatedSessionQuery)
+    const getCreatedSessionQuery = `SELECT TOP 1 * FROM user_activity WHERE user_id=@userId ORDER BY login_at DESC;`
+    const createdSession = await ExecuteQuery(getCreatedSessionQuery, { userId })
 
     res
       .status(200)

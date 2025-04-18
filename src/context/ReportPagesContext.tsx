@@ -78,6 +78,10 @@ export const ContextPagesProvider: React.FC<ReportPageContextProviderProps> = ({
   }
 
   const getInitialNav = async (arr: AvailableWorkspaceAndReports[]) => {
+    if (!arr || !arr.length) {
+      return []
+    }
+
     let availableReportIds: any = []
 
     if (canViewRoles && viewAsCustomRole !== null) {

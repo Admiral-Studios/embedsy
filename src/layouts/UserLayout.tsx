@@ -28,6 +28,8 @@ import { ReportPagesContext } from 'src/context/ReportPagesContext'
 import InactivityWarningModal from 'src/components/shared/InactivityWarningModal'
 import { SessionContext } from 'src/context/SessionContext'
 import { useAuth } from 'src/hooks/useAuth'
+import { useAdminRoles } from 'src/hooks/useAdminRoles'
+import ViewAsRoleToolbar from 'src/components/admin/ViewAsRoleToolbar'
 
 interface Props {
   children: ReactNode
@@ -39,7 +41,7 @@ const UserLayout = ({ children, contentHeightFixed }: Props) => {
   const { settings, appPortalSettings, saveSettings } = useSettings()
   const { navItems } = useContext(ReportPagesContext) || {}
   const { isWarningModalOpen, acknowledgeWarning, isInactiveBeyondCapacityThreshold } = useContext(SessionContext)
-
+  const { viewAsCustomRole } = useAdminRoles()
   const { user } = useAuth()
 
   const [verticalMenuItems, setVerticalItems] = useState<any[]>(navItems!)
@@ -75,6 +77,7 @@ const UserLayout = ({ children, contentHeightFixed }: Props) => {
 
   return (
     <>
+      {viewAsCustomRole && <ViewAsRoleToolbar />}
       <Layout
         hidden={hidden}
         settings={settings}

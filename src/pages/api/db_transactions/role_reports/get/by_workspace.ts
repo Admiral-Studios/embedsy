@@ -1,14 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
+import { withAuth } from 'src/pages/api/middleware/authMiddleware'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { workspaceId } = req.body as { workspaceId: string }
 
     if (workspaceId) {
-      const findRoleQuery = `SELECT * FROM role_reports WHERE workspace_id = '${workspaceId}'`
+      const findRoleQuery = `SELECT * FROM role_reports WHERE workspace_id = @workspaceId`
 
-      const dbResult = await ExecuteQuery(findRoleQuery)
+      const dbResult = await ExecuteQuery(findRoleQuery, { workspaceId })
       const [innerArray] = dbResult
 
       res.status(200).json(innerArray)
@@ -17,3 +18,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(403).json({ message: 'Failed to get role by user id' })
   }
 }
+
+export default withAuth(handler)

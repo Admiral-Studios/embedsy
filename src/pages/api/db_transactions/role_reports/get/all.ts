@@ -3,8 +3,10 @@ import { NextApiRequest, NextApiResponse } from 'next/types'
 import { PageTypesEnum } from 'src/enums/pageTypes'
 import { WorkspaceType } from 'src/types/types'
 import ExecuteQuery from 'src/utils/db'
+import { PermanentRoles } from 'src/context/types'
+import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { is_admin } = req.query
 
@@ -15,9 +17,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const dbResult = await ExecuteQuery(query)
     const [innerArray] = dbResult
 
-    const { data: workspaces } = await axios.get<WorkspaceType[]>(
-      `${process.env.NEXT_PUBLIC_URL}/api/powerbi/workspaces`
-    )
+    let workspaces: WorkspaceType[] = []
+    try {
+      const workspacesResponse = await axios.get<WorkspaceType[]>(
+        `${process.env.NEXT_PUBLIC_URL}/api/powerbi/workspaces`
+      )
+      if (workspacesResponse.status === 200) {
+        workspaces = workspacesResponse.data
+      } else {
+        workspaces = []
+      }
+    } catch (error) {
+      workspaces = []
+    }
 
     let powerBiReports = []
 
@@ -56,8 +68,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (let i = 0; i < innerArray.length; i++) {
       let currentReport = innerArray[i]
 
-      const datasetQuery = `SELECT last_refresh_date, last_refresh_status FROM datasets WHERE dataset_id = '${currentReport.dataset_id}'`
-      const [datasetResult] = await ExecuteQuery(datasetQuery)
+      const datasetQuery = `SELECT last_refresh_date, last_refresh_status FROM datasets WHERE dataset_id = @datasetId`
+      const [datasetResult] = await ExecuteQuery(datasetQuery, { datasetId: currentReport.dataset_id })
 
       if (datasetResult && datasetResult.length > 0) {
         currentReport = { ...currentReport, ...datasetResult[0] }
@@ -91,3 +103,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(403).json({ message: 'Failed to get reports' })
   }
 }
+
+export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

@@ -39,15 +39,23 @@ const signRefreshToken = (id: number): string => {
 const currentDate = new Date().toISOString().replace('T', ' ').replace('Z', '')
 
 const registerNewUser = async (email: string, user_name: string) => {
-  const querySave = `INSERT INTO Users (user_name, email, name, is_verified, created_at, updated_at) VALUES ('${user_name}', '${email}', '${user_name}', '${true}', '${currentDate}', '${currentDate}');`
-  await ExecuteQuery(querySave)
+  const querySave = `INSERT INTO Users (user_name, email, name, is_verified, created_at, updated_at) 
+                     VALUES (@user_name, @email, @user_name, @is_verified, @currentDate, @currentDate);`
+  await ExecuteQuery(querySave, {
+    user_name,
+    email,
+    is_verified: true,
+    currentDate
+  })
 
-  const checkExistingRoleQuery = `SELECT TOP 1 * FROM user_roles WHERE email='${email}'`
-  const existingRoleResult = await ExecuteQuery(checkExistingRoleQuery)
+  const checkExistingRoleQuery = `SELECT TOP 1 * FROM user_roles WHERE email=@email`
+  const existingRoleResult = await ExecuteQuery(checkExistingRoleQuery, { email })
 
   if (!existingRoleResult[0]?.length) {
-    const getGuestRoleQuery = `SELECT TOP 1 id FROM roles WHERE role = '${PermanentRoles.guest}'`
-    const guestRoleResult = await ExecuteQuery(getGuestRoleQuery)
+    const getGuestRoleQuery = `SELECT TOP 1 id FROM roles WHERE role = @role`
+    const guestRoleResult = await ExecuteQuery(getGuestRoleQuery, {
+      role: PermanentRoles.guest
+    })
 
     if (!guestRoleResult[0]?.length) {
       throw new Error('Guest role not found')
@@ -55,21 +63,24 @@ const registerNewUser = async (email: string, user_name: string) => {
 
     const guestRoleId = guestRoleResult[0][0].id
 
-    const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES ('${email}', ${guestRoleId});`
-    await ExecuteQuery(assignRoleQuery)
+    const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES (@email, @roleId);`
+    await ExecuteQuery(assignRoleQuery, {
+      email,
+      roleId: guestRoleId
+    })
   }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { email, username } = req.body as { email: string; username: string }
-  const query = `SELECT TOP 1 * FROM users WHERE email='${email}'`
-  let findUser = await ExecuteQuery(query)
+  const query = `SELECT TOP 1 * FROM users WHERE email=@email`
+  let findUser = await ExecuteQuery(query, { email })
 
   const viewAsCustomRole = req.cookies.viewAsCustomRole
 
   if (!findUser[0].length) {
     await registerNewUser(email, username)
-    findUser = await ExecuteQuery(query)
+    findUser = await ExecuteQuery(query, { email })
   }
   const user = findUser[0][0]
 
@@ -106,11 +117,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const loginAt = new Date().toISOString().replace('T', ' ').replace('Z', '')
 
-  const loginSessionQuery = `INSERT INTO user_activity (user_id, login_at, session_duration) VALUES ('${
-    user.id
-  }', '${loginAt}', ${0});`
+  const loginSessionQuery = `INSERT INTO user_activity (user_id, login_at, session_duration) 
+                            VALUES (@userId, @loginAt, @sessionDuration);`
 
-  await ExecuteQuery(loginSessionQuery)
+  await ExecuteQuery(loginSessionQuery, {
+    userId: user.id,
+    loginAt,
+    sessionDuration: 0
+  })
 
   res.status(200).json({
     userData: {

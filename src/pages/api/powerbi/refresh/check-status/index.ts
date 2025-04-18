@@ -22,11 +22,11 @@ export default async function handler(request: NextApiRequest, response: NextApi
   const checkStatusQuery = `
     SELECT last_refresh_status, last_refresh_date
     FROM datasets
-    WHERE dataset_id = '${datasetId}'
+    WHERE dataset_id = @datasetId
   `
 
   try {
-    const [result] = await ExecuteQuery(checkStatusQuery)
+    const [result] = await ExecuteQuery(checkStatusQuery, { datasetId })
     if (result && result.length > 0) {
       const { last_refresh_status, last_refresh_date } = result[0]
       dbLastRefreshStatus = last_refresh_status as 'success' | 'failed' | 'unknown'
@@ -86,7 +86,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     }
   } catch (error: any) {
     console.error('Error retrieving refresh status:', error.response?.data || error.message)
-    
-return response.status(error.response?.status || 500).json({ error: 'Failed to retrieve refresh status' })
+
+    return response.status(error.response?.status || 500).json({ error: 'Failed to retrieve refresh status' })
   }
 }

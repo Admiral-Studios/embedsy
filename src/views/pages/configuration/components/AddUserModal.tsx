@@ -18,18 +18,22 @@ const AddUserModal = ({ open, onClose, handleProcessed, allUsersEmails, roleToAs
   const [emails, setEmails] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [overridingExistingRole, setOverridingExistingRole] = useState(false)
 
   const options = allUsersEmails.filter(user => !roleToAssignUser?.users.map(user => user.email)?.includes(user.email))
 
   const onProcessed = async () => {
     setLoading(true)
-
-    await handleProcessed(emails)
-
-    onClose()
-    setEmails([])
-
-    setLoading(false)
+    try {
+      await handleProcessed(emails)
+      onClose()
+      setEmails([])
+      setOverridingExistingRole(false)
+    } catch (error) {
+      console.error('Error processing users:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const onChange = (values: string[]) => {
@@ -41,14 +45,19 @@ const AddUserModal = ({ open, onClose, handleProcessed, allUsersEmails, roleToAs
 
     setError('')
     setEmails(values)
+
+    const hasExistingUser = values.some(email =>
+      options.some(user => user.email === email || user.email === getOptionValue(email))
+    )
+    setOverridingExistingRole(hasExistingUser)
   }
 
   const getOptionValue = (option: string) => {
     if (option.includes(' | Role:')) {
       return option.split(' | Role:')[0].trim()
     }
-    
-return option
+
+    return option
   }
 
   return (
@@ -71,7 +80,7 @@ return option
           />
         </Box>
 
-        {emails.length > 0 && (
+        {emails.length > 0 && overridingExistingRole && (
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, color: 'text.secondary' }}>
             <Icon icon='mdi:alert-circle-outline' fontSize={20} style={{ marginRight: '8px' }} />
             <Typography variant='body2'>

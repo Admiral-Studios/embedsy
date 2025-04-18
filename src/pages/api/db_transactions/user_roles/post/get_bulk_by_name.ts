@@ -1,7 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
+import { PermanentRoles } from 'src/context/types'
+import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-export default async function bulkByNameHandler(req: NextApiRequest, res: NextApiResponse) {
+async function bulkByNameHandler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' })
   }
@@ -13,14 +15,19 @@ export default async function bulkByNameHandler(req: NextApiRequest, res: NextAp
       return res.status(400).json({ message: 'Invalid input format. Role names could not be inferred.' })
     }
 
-    const roleList = roleNames.map(name => `'${name}'`).join(', ')
+    const placeholders = roleNames.map((_, index) => `@role${index}`).join(', ')
     const query = `
       SELECT id, role
       FROM roles
-      WHERE role IN (${roleList})
+      WHERE role IN (${placeholders})
     `
 
-    const dbResult = await ExecuteQuery(query)
+    const params: Record<string, string> = {}
+    roleNames.forEach((name, index) => {
+      params[`role${index}`] = name
+    })
+
+    const dbResult = await ExecuteQuery(query, params)
 
     if (!dbResult[0].length || (dbResult[0].length === 1 && Object.keys(dbResult[0][0]).length === 0)) {
       return res.status(404).json({ message: 'No roles found matching the provided role names.' })
@@ -37,3 +44,5 @@ export default async function bulkByNameHandler(req: NextApiRequest, res: NextAp
     res.status(500).json({ message: 'Failed to generate role IDs for the provided user role names. Upload failed.' })
   }
 }
+
+export default withRole(bulkByNameHandler, [PermanentRoles.admin, PermanentRoles.super_admin])

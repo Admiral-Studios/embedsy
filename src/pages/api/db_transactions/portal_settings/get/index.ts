@@ -6,10 +6,10 @@ import { PortalSetting, PortalSettingNames } from 'src/@core/context/settingsCon
 export const getPortalSettingFromDB = async (setting: string): Promise<PortalSetting> => {
   const getSettingQuery = `
     SELECT * FROM portal_settings
-    WHERE setting = '${setting}';
+    WHERE setting = @setting;
   `
 
-  return (await ExecuteQuery(getSettingQuery))?.[0]?.[0]
+  return (await ExecuteQuery(getSettingQuery, { setting }))?.[0]?.[0]
 }
 
 // Get client ID and client secret from the database

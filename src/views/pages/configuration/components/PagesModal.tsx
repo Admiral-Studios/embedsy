@@ -295,8 +295,8 @@ const PagesModal = ({ open, onClose, pageReportToUpdate, roleAddingDisabled = fa
                   onChange={v => setWorkspace(v)}
                   placeholder='Enter workspace name'
                   label='Workspace Name'
-                  getOptionLabel={option => option.name}
-                  options={workspaces}
+                  getOptionLabel={option => option?.name || ''}
+                  options={Array.isArray(workspaces) ? workspaces : []}
                 />
               </Box>
 
@@ -306,8 +306,8 @@ const PagesModal = ({ open, onClose, pageReportToUpdate, roleAddingDisabled = fa
                   onChange={v => setReport(v)}
                   placeholder='Enter report name'
                   label='Report Name'
-                  getOptionLabel={option => option.name}
-                  options={reportsFilteredByType}
+                  getOptionLabel={option => option?.name || ''}
+                  options={Array.isArray(reportsFilteredByType) ? reportsFilteredByType : []}
                 />
               </Box>
               <Box sx={{ mt: 4 }}>

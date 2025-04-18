@@ -1,7 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
+import { PermanentRoles } from 'src/context/types'
+import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function bulkInsertHandler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const userRoles = req.body
 
@@ -11,12 +13,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       for (const { email, roleId } of userRoles) {
-        const checkExistingRoleQuery = `SELECT TOP 1 * FROM user_roles WHERE email='${email}'`
-        const existingRoleResult = await ExecuteQuery(checkExistingRoleQuery)
+        const checkExistingRoleQuery = `SELECT TOP 1 * FROM user_roles WHERE email=@email`
+        const existingRoleResult = await ExecuteQuery(checkExistingRoleQuery, { email })
 
         if (!existingRoleResult[0]?.length) {
-          const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES ('${email}', ${roleId});`
-          await ExecuteQuery(assignRoleQuery)
+          const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES (@email, @roleId);`
+          await ExecuteQuery(assignRoleQuery, { email, roleId })
         }
       }
 
@@ -29,3 +31,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).json({ message: 'Method Not Allowed' })
   }
 }
+
+export default withRole(bulkInsertHandler, [PermanentRoles.admin, PermanentRoles.super_admin])

@@ -1,9 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import { PageTypesEnum } from 'src/enums/pageTypes'
+import { withAuth } from 'src/pages/api/middleware/authMiddleware'
 import ExecuteQuery from 'src/utils/db'
 import { transformWorkspaceId } from 'src/utils/workspaceIDTransformer'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { roleId } = req.body as { roleId: string }
 
@@ -30,9 +31,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         JOIN
           role_reports rr ON r.id = rr.role_id
         WHERE
-          r.id = ${roleId};`
+          r.id = @roleId;`
 
-      const roleQueryResult = await ExecuteQuery(getRoleQuery)
+      const roleQueryResult = await ExecuteQuery(getRoleQuery, { roleId })
 
       if (roleQueryResult[0].length) {
         const userRoles = roleQueryResult[0]
@@ -80,3 +81,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ message: 'Internal server error' })
   }
 }
+
+export default withAuth(handler)

@@ -15,7 +15,6 @@ type Props = {
   freeSolo?: boolean
   getOptionLabel?: (option: any) => string
   getOptionValue?: (option: string) => string
-  renderOption?: (option: any) => ReactNode | undefined
 }
 
 const defaultGetOptionLabel = (option: any) => option
@@ -31,8 +30,7 @@ const AutocompleteInput = ({
   multiple = false,
   freeSolo = false,
   getOptionLabel,
-  getOptionValue = defaultGetOptionValue,
-  renderOption = undefined
+  getOptionValue = defaultGetOptionValue
 }: Props) => {
   const [inputValue, setInputValue] = useState('')
   const [editableValue, setEditableValue] = useState<{ index: number; value: string } | null>(null)
@@ -59,7 +57,8 @@ const AutocompleteInput = ({
   const renderEditableChip = useCallback(
     (value: string[], getTagsProps: AutocompleteRenderGetTagProps) => {
       return value.map((option, index) => {
-        const { key, ...otherProps } = getTagsProps({ index })
+        const tagProps = getTagsProps({ index })
+        const { key, ...otherProps } = tagProps
 
         return (
           <ChipItem
@@ -142,7 +141,6 @@ const AutocompleteInput = ({
         value={value}
         inputValue={inputValue}
         getOptionLabel={getOptionLabel || defaultGetOptionLabel}
-        renderOption={renderOption}
         onChange={(_, newValue) => {
           if (multiple && Array.isArray(newValue)) {
             const processedValues = newValue.map(item => {
@@ -171,6 +169,15 @@ const AutocompleteInput = ({
             }}
           />
         )}
+        renderOption={(props, option) => {
+          const displayText = getOptionLabel ? getOptionLabel(option) : defaultGetOptionLabel(option)
+
+          return (
+            <li key={option} {...props}>
+              {displayText}
+            </li>
+          )
+        }}
         sx={{
           '.Mui-focusVisible': {
             backgroundColor: 'rgba(47, 43, 61, 0.06) !important'

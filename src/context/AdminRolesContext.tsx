@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { useAuth } from 'src/hooks/useAuth'
 import axios from 'axios'
 import { AdminRolesType, PermanentRoles, Role } from './types'
@@ -8,7 +8,8 @@ const defaultProvider: AdminRolesType = {
   canViewRoles: false,
   viewAsCustomRole: null,
   roles: [],
-  onChangeViewAsRole: () => null
+  onChangeViewAsRole: () => null,
+  refreshRoles: () => Promise.resolve()
 }
 
 const AdminRolesContext = createContext(defaultProvider)
@@ -23,9 +24,34 @@ const AdminRolesProvider = ({ children }: Props) => {
   const [canViewRoles, setCanViewRoles] = useState(false)
   const { hasAdminPrivileges, isSuperAdmin } = useAuth()
 
-  const onChangeViewAsRole = async (role: Role) => {
+  const fetchRoles = useCallback(async () => {
+    if (hasAdminPrivileges) {
+      try {
+        /*
+        TODO: Restructure all API calls inside a services folder for better architecture
+        sturcturing each service into specific calls.
+        */
+        const response = await axios.get(`/api/db_transactions/role/get/all`)
+        setRoles(response.data || [])
+        
+return response.data || []
+      } catch (error) {
+        console.error('Failed to fetch roles', error)
+        
+return []
+      }
+    }
+    
+return []
+  }, [hasAdminPrivileges])
+
+  const refreshRoles = useCallback(async () => {
+    return await fetchRoles()
+  }, [fetchRoles])
+
+  const onChangeViewAsRole = async (role: Role | null) => {
     const isRoleAdminOrSuperAdmin =
-      (role.role === PermanentRoles.admin && !isSuperAdmin) || role.role === PermanentRoles.super_admin
+      !role || (role.role === PermanentRoles.admin && !isSuperAdmin) || role.role === PermanentRoles.super_admin
     const roleValue = isRoleAdminOrSuperAdmin ? null : String(role.id)
 
     try {
@@ -47,26 +73,9 @@ const AdminRolesProvider = ({ children }: Props) => {
   useEffect(() => {
     if (hasAdminPrivileges) {
       setCanViewRoles(true)
-      const fetchRoles = async () => {
-        if (hasAdminPrivileges) {
-          try {
-            /*
-            TODO: Restructure all API calls inside a services folder for better architecture
-            sturcturing each service into specific calls.
-
-            Axios should not be imported directly into components. We should use services for abstractization between ClientSide & APIs.
-            Architecture should follow this order: Components > Service > API
-          */
-            const response = await axios.get(`/api/db_transactions/role/get/all`)
-            setRoles(response.data || [])
-          } catch (error) {
-            console.error('Failed to fetch roles', error)
-          }
-        }
-      }
       fetchRoles()
     }
-  }, [hasAdminPrivileges])
+  }, [hasAdminPrivileges, fetchRoles])
 
   useEffect(() => {
     const viewAsCustomRoleCookie = readCookieOnClientSide('viewAsCustomRole')
@@ -79,7 +88,7 @@ const AdminRolesProvider = ({ children }: Props) => {
   }, [roles])
 
   return (
-    <AdminRolesContext.Provider value={{ canViewRoles, viewAsCustomRole, roles, onChangeViewAsRole }}>
+    <AdminRolesContext.Provider value={{ canViewRoles, viewAsCustomRole, roles, onChangeViewAsRole, refreshRoles }}>
       {children}
     </AdminRolesContext.Provider>
   )

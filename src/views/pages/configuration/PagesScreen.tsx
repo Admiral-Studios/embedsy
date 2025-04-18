@@ -57,7 +57,7 @@ const FooterItemValueStyled = styled(Typography)(() => ({
 }))
 
 const PagesScreen = () => {
-  const { handleRefreshClick, reportsNeedUpdating, syncReportsWithTenant, loadingData } =
+  const { handleRefreshClick, reportsNeedUpdating, syncReportsWithTenant, loadingData, workspaceError } =
     useContext(UserConfigurationContext)
   const { removeAllPageRolesById, addUpdatePage, pages } = useContext(PagesContext)
   const { isAdmin, isSuperAdmin } = useAuth()
@@ -88,6 +88,8 @@ const PagesScreen = () => {
     () => roles.filter(r => !existingPageToAddRole?.roles?.find(({ id }) => id === r.id)),
     [roles, existingPageToAddRole]
   )
+
+  console.log(reportsNeedUpdating)
 
   const debouncedSearch = useDebounce(searchTerm, 500)
 
@@ -370,189 +372,200 @@ const PagesScreen = () => {
     </Grid>
   )
 
-  if (!pages.length) {
-    return (
-      <>
-        {renderControls()}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
-          <Typography variant='h6'>There are no pages available.</Typography>
-        </Box>
-      </>
-    )
-  }
-
   return (
     <>
       <ItemList controls={renderControls()}>
-        {searchedPages.slice(0, visiblePages).map(page => {
-          const previewPages = page.preview_pages
-          const status = page.last_refresh_status
-          const rowLevelRole = page.row_level_role ?? ''
-          const displayStatus = status ? uppercaseFirstLetter(status) : 'N/A'
-          const isReport = page.type !== PageTypesEnum.Iframe && page.type !== PageTypesEnum.Hyperlink
+        {workspaceError && (
+          <Typography sx={{ textAlign: 'center', width: '100%' }}>
+            {workspaceError}
+            <br />
+            For more information, click{' '}
+            <a
+              href='https://embedsy.io/documentation/installation/service_principal'
+              style={{ color: 'inherit', fontWeight: 'bold' }}
+              target='_blank'
+            >
+              here
+            </a>
+            .
+          </Typography>
+        )}
 
-          return (
-            <ItemCard
-              key={page.id}
-              checked={selectedIds.includes(page.id)}
-              onSelect={handleSelect}
-              id={page.id}
-              title={getTitleWithIcons(
-                page.type === PageTypesEnum.Iframe
-                  ? page.iframe_title || ''
-                  : page.type === PageTypesEnum.Hyperlink
-                  ? `${page.hyperlink_title} (${page.hyperlink_url})` || ''
-                  : page.report,
-                page.dataToUpdate!
-              )}
-              density={density}
-              isRemoved={!!page?.dataToUpdate?.isRemoved}
-              topControls={
-                <>
-                  {page.type === PageTypesEnum.PowerBiReport && (
+        {pages.length > 0 ? (
+          searchedPages.slice(0, visiblePages).map(page => {
+            const previewPages = page.preview_pages
+            const status = page.last_refresh_status
+            const rowLevelRole = page.row_level_role ?? ''
+            const displayStatus = status ? uppercaseFirstLetter(status) : 'N/A'
+            const isReport = page.type !== PageTypesEnum.Iframe && page.type !== PageTypesEnum.Hyperlink
+
+            return (
+              <ItemCard
+                key={page.id}
+                checked={selectedIds.includes(page.id)}
+                onSelect={handleSelect}
+                id={page.id}
+                title={getTitleWithIcons(
+                  page.type === PageTypesEnum.Iframe
+                    ? page.iframe_title || ''
+                    : page.type === PageTypesEnum.Hyperlink
+                    ? `${page.hyperlink_title} (${page.hyperlink_url})` || ''
+                    : page.report,
+                  page.dataToUpdate!
+                )}
+                density={density}
+                isRemoved={!!page?.dataToUpdate?.isRemoved}
+                topControls={
+                  <>
+                    {page.type === PageTypesEnum.PowerBiReport && (
+                      <Button
+                        variant='outlined'
+                        onClick={() => handleRefreshClick(status, page.workspace_id, page.dataset_id)}
+                        startIcon={
+                          <RefreshIcon
+                            sx={{
+                              ...(page?.last_refresh_status === 'unknown' && {
+                                animation: 'spin 2s linear infinite',
+                                '@keyframes spin': {
+                                  '0%': {
+                                    transform: 'rotate(0deg)'
+                                  },
+                                  '100%': {
+                                    transform: 'rotate(360deg)'
+                                  }
+                                }
+                              })
+                            }}
+                          />
+                        }
+                      >
+                        {page?.last_refresh_status === 'unknown' ? 'Refreshing Page' : 'Refresh Page'}
+                      </Button>
+                    )}
+
+                    <Button variant='outlined' onClick={() => clickEditButton(page)}>
+                      Edit Page
+                    </Button>
+
                     <Button
                       variant='outlined'
-                      onClick={() => handleRefreshClick(status, page.workspace_id, page.dataset_id)}
-                      startIcon={
-                        <RefreshIcon
-                          sx={{
-                            ...(page?.last_refresh_status === 'unknown' && {
-                              animation: 'spin 2s linear infinite',
-                              '@keyframes spin': {
-                                '0%': {
-                                  transform: 'rotate(0deg)'
-                                },
-                                '100%': {
-                                  transform: 'rotate(360deg)'
-                                }
-                              }
-                            })
-                          }}
-                        />
-                      }
+                      color='error'
+                      onClick={() => {
+                        setOpenRemoveModal(true)
+                        setPageIdToDelete(page.id)
+                        setSelectedIds(prev => prev.filter(prevId => prevId !== page.id))
+                      }}
                     >
-                      {page?.last_refresh_status === 'unknown' ? 'Refreshing Page' : 'Refresh Page'}
+                      Delete Page
+                    </Button>
+                  </>
+                }
+                footerControls={
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, width: '100%', mt: 8 }}>
+                    <Box sx={{ display: 'flex', gap: 6, pl: 12 }}>
+                      {rowLevelRole && (
+                        <Box>
+                          <FooterItemHeaderStyled>Row Level Role</FooterItemHeaderStyled>
+                          <FooterItemValueStyled>{rowLevelRole}</FooterItemValueStyled>
+                        </Box>
+                      )}
+
+                      {isReport && (
+                        <Box>
+                          <FooterItemHeaderStyled>Preview pages</FooterItemHeaderStyled>
+
+                          <Box sx={{ textAlign: 'center' }}>
+                            <Icon icon={previewPages ? 'mdi:check' : 'mdi:close'} />
+                          </Box>
+                        </Box>
+                      )}
+
+                      {isReport && (
+                        <>
+                          <Box>
+                            <FooterItemHeaderStyled>Last refresh status</FooterItemHeaderStyled>
+
+                            <FooterItemValueStyled>{displayStatus}</FooterItemValueStyled>
+                          </Box>
+
+                          <Box>
+                            <FooterItemHeaderStyled>Last refresh date</FooterItemHeaderStyled>
+
+                            <FooterItemValueStyled>
+                              {page.last_refresh_date
+                                ? moment(page.last_refresh_date).format('YYYY/MM/DD - HH:mm:ss')
+                                : '-'}
+                            </FooterItemValueStyled>
+                          </Box>
+                        </>
+                      )}
+                    </Box>
+                  </Box>
+                }
+              >
+                <Box sx={{ mt: 4, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
+                  {(loadedUsersPagesIds.has(page.id) ? page?.users : page.users.slice(0, 10))?.map(user => (
+                    <ChipItem variant='outlined' key={user.id} size='medium' label={user.email} color='primary' />
+                  ))}
+
+                  {page.users?.length > 10 && (
+                    <Button
+                      variant='contained'
+                      size='small'
+                      sx={{ borderRadius: 4 }}
+                      onClick={() => togglePageId(page.id)}
+                    >
+                      {loadedUsersPagesIds.has(page.id) ? 'Hide' : 'Show More'}
                     </Button>
                   )}
+                </Box>
 
-                  <Button variant='outlined' onClick={() => clickEditButton(page)}>
-                    Edit Page
-                  </Button>
+                <Box sx={{ mt: 8, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
+                  {page.roles.map(role => (
+                    <ChipItem
+                      key={role.id}
+                      size='medium'
+                      label={role.role}
+                      color='primary'
+                      onClick={e => {
+                        e.stopPropagation()
+                        setRoleUsers(page.users.filter(({ role_id }) => role_id === role.id))
+                      }}
+                      onDelete={() =>
+                        setRoleToRemove({
+                          role: role.role,
+                          parentPageId: role.parentPageId,
+                          report: page.type === PageTypesEnum.PowerBiReport ? page.report : page.iframe_title,
+                          pageId: page.id
+                        })
+                      }
+                      sx={{
+                        height: '26px',
+                        '&:hover': {
+                          backgroundColor: '#FFC815',
+                          boxShadow: '0px 2px 4px 0px rgba(29, 29, 29, 0.251)'
+                        }
+                      }}
+                    />
+                  ))}
 
                   <Button
                     variant='outlined'
-                    color='error'
-                    onClick={() => {
-                      setOpenRemoveModal(true)
-                      setPageIdToDelete(page.id)
-                      setSelectedIds(prev => prev.filter(prevId => prevId !== page.id))
-                    }}
-                  >
-                    Delete Page
-                  </Button>
-                </>
-              }
-              footerControls={
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, width: '100%', mt: 8 }}>
-                  <Box sx={{ display: 'flex', gap: 6, pl: 12 }}>
-                    {rowLevelRole && (
-                      <Box>
-                        <FooterItemHeaderStyled>Row Level Role</FooterItemHeaderStyled>
-                        <FooterItemValueStyled>{rowLevelRole}</FooterItemValueStyled>
-                      </Box>
-                    )}
-
-                    {isReport && (
-                      <Box>
-                        <FooterItemHeaderStyled>Preview pages</FooterItemHeaderStyled>
-
-                        <Box sx={{ textAlign: 'center' }}>
-                          <Icon icon={previewPages ? 'mdi:check' : 'mdi:close'} />
-                        </Box>
-                      </Box>
-                    )}
-
-                    {isReport && (
-                      <>
-                        <Box>
-                          <FooterItemHeaderStyled>Last refresh status</FooterItemHeaderStyled>
-
-                          <FooterItemValueStyled>{displayStatus}</FooterItemValueStyled>
-                        </Box>
-
-                        <Box>
-                          <FooterItemHeaderStyled>Last refresh date</FooterItemHeaderStyled>
-
-                          <FooterItemValueStyled>
-                            {page.last_refresh_date
-                              ? moment(page.last_refresh_date).format('YYYY/MM/DD - HH:mm:ss')
-                              : '-'}
-                          </FooterItemValueStyled>
-                        </Box>
-                      </>
-                    )}
-                  </Box>
-                </Box>
-              }
-            >
-              <Box sx={{ mt: 4, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
-                {(loadedUsersPagesIds.has(page.id) ? page?.users : page.users.slice(0, 10))?.map(user => (
-                  <ChipItem variant='outlined' key={user.id} size='medium' label={user.email} color='primary' />
-                ))}
-
-                {page.users?.length > 10 && (
-                  <Button
-                    variant='contained'
                     size='small'
                     sx={{ borderRadius: 4 }}
-                    onClick={() => togglePageId(page.id)}
+                    onClick={() => setExistingPageToAddRole(page)}
                   >
-                    {loadedUsersPagesIds.has(page.id) ? 'Hide' : 'Show More'}
+                    Add Role +
                   </Button>
-                )}
-              </Box>
-
-              <Box sx={{ mt: 8, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
-                {page.roles.map(role => (
-                  <ChipItem
-                    key={role.id}
-                    size='medium'
-                    label={role.role}
-                    color='primary'
-                    onClick={e => {
-                      e.stopPropagation()
-                      setRoleUsers(page.users.filter(({ role_id }) => role_id === role.id))
-                    }}
-                    onDelete={() =>
-                      setRoleToRemove({
-                        role: role.role,
-                        parentPageId: role.parentPageId,
-                        report: page.type === PageTypesEnum.PowerBiReport ? page.report : page.iframe_title,
-                        pageId: page.id
-                      })
-                    }
-                    sx={{
-                      height: '26px',
-                      '&:hover': {
-                        backgroundColor: '#FFC815',
-                        boxShadow: '0px 2px 4px 0px rgba(29, 29, 29, 0.251)'
-                      }
-                    }}
-                  />
-                ))}
-
-                <Button
-                  variant='outlined'
-                  size='small'
-                  sx={{ borderRadius: 4 }}
-                  onClick={() => setExistingPageToAddRole(page)}
-                >
-                  Add Role +
-                </Button>
-              </Box>
-            </ItemCard>
-          )
-        })}
+                </Box>
+              </ItemCard>
+            )
+          })
+        ) : !workspaceError ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
+            <Typography variant='h6'>There are no pages available.</Typography>
+          </Box>
+        ) : null}
       </ItemList>
 
       {visiblePages < searchedPages.length && (

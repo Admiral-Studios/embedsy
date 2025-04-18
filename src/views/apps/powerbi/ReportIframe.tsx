@@ -14,9 +14,6 @@ import { usePBITheme } from 'src/hooks/powerbi/usePBITheme'
 import { useSettings } from 'src/@core/hooks/useSettings'
 import { preloadThemes } from 'src/utils/powerbi/preloadPBI'
 import { ReportTypes } from 'src/enums/pageTypes'
-import { takeActionCustomCommand } from 'src/utils/shareSlackCustomCommand'
-import SlackShareModal from 'src/components/shared/Integrations/ShareDataModal'
-import { powerBiConfigSettings } from 'src/configs/powerbi'
 
 const fetcher = (url: string, email: string, datasetId: string, rowLevelRole: string) =>
   fetch(url, {
@@ -36,8 +33,6 @@ const PowerBiIframe = () => {
   const [lightThemeConfig, setLightThemeConfig] = useState(null)
   const [isPageChangingFromReport, setIsPageChangingFromReport] = useState(false)
   const [isThemeInitialized, setIsThemeInitialized] = useState(false)
-  const [slackShareData, setSlackShareData] = useState<string | null>(null)
-
   const tokenManagerInitialized = useRef(false)
   const currentReportId = useRef<any>('')
   const currentPageRef = useRef<string | undefined>(undefined)
@@ -89,38 +84,6 @@ const PowerBiIframe = () => {
     }
   )
 
-  const initializeSnapshotTrigger = async (
-    event: pbi.service.ICustomEvent<{
-      command: string
-      visual: {
-        name: string
-      }
-      page: {
-        name: string
-      }
-    }>
-  ) => {
-    if (event?.detail?.command === 'takeAnAction') {
-      if (report) {
-        const pages = await report.getPages()
-
-        const activePage = pages.filter(function (page) {
-          return page.isActive
-        })[0]
-
-        const visuals = await activePage.getVisuals()
-
-        const visual = visuals.find(({ name }) => name === event.detail.visual.name)
-
-        if (visual) {
-          const data = await visual.exportData()
-
-          setSlackShareData(data.data)
-        }
-      }
-    }
-  }
-
   useEffect(() => {
     const fetchThemes = async () => {
       if (appBranding?.powerbi_dark_theme) {
@@ -160,16 +123,6 @@ const PowerBiIframe = () => {
       }
 
       report.on('loaded', initializeTheme)
-
-      report.on<{
-        command: string
-        visual: {
-          name: string
-        }
-        page: {
-          name: string
-        }
-      }>('commandTriggered', initializeSnapshotTrigger)
 
       return () => {
         report.off('loaded', initializeTheme)
@@ -258,35 +211,29 @@ const PowerBiIframe = () => {
         if (embeddedReport.config.id !== (report as any)?.config.id) {
           setReport(embeddedReport as pbi.Report)
           setContextReport(embeddedReport as pbi.Report)
-
-          takeActionCustomCommand(embeddedReport as pbi.Report)
         }
       }
     },
     [setReport, setContextReport, report]
   )
 
-  const powerBiConfig = useMemo(() => {
-    const config: any = {
+  const powerBiConfig = useMemo(
+    () => ({
       type: 'report',
       id: reportId,
       accessToken: data?.reportToken,
       tokenType: models.TokenType.Embed,
-      permissions: models.Permissions.All,
       pageName: query.page ? query.page : undefined,
       theme: {
         themeJson: theme.palette.mode === 'dark' ? darkThemeConfig || {} : lightThemeConfig || {}
       },
-
       settings: {
-        ...powerBiConfigSettings,
         navContentPaneEnabled: isFullscreen,
         layoutType: models.LayoutType.Master
       }
-    }
-
-    return config
-  }, [reportId, data?.reportToken, query.page, theme.palette.mode, darkThemeConfig, lightThemeConfig, isFullscreen])
+    }),
+    [reportId, data?.reportToken, query.page, theme.palette.mode, darkThemeConfig, lightThemeConfig, isFullscreen]
+  )
 
   if (!data) return null
 
@@ -318,7 +265,6 @@ const PowerBiIframe = () => {
           width={appBranding?.loading_spinner_width || process.env.NEXT_PUBLIC_SPINNER_WIDTH || 100}
         />
       </div>
-
       <div
         style={
           isLoaded && !isPageChangingFromReport
@@ -332,16 +278,6 @@ const PowerBiIframe = () => {
             eventHandlers={
               new Map([
                 ['loaded', handleLoaded],
-                [
-                  'rendered',
-                  (_: any, r: any) => {
-                    const renderExtensions = async () => {
-                      await takeActionCustomCommand(r)
-                    }
-
-                    renderExtensions()
-                  }
-                ],
                 [
                   'pageChanged',
                   (event: any) => {
@@ -369,8 +305,6 @@ const PowerBiIframe = () => {
           />
         </div>
       </div>
-
-      <SlackShareModal open={!!slackShareData} sharedData={slackShareData} onClose={() => setSlackShareData(null)} />
     </div>
   )
 }

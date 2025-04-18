@@ -7,6 +7,7 @@ import { styled, useTheme } from '@mui/material/styles'
 
 interface FooterIllustrationsProp {
   image?: ReactNode
+  className?: string
 }
 
 // Styled Components
@@ -20,7 +21,7 @@ const MaskImg = styled('img')(() => ({
 
 const FooterIllustrations = (props: FooterIllustrationsProp) => {
   // ** Props
-  const { image } = props
+  const { image, className } = props
 
   // ** Hook
   const theme = useTheme()
@@ -28,17 +29,9 @@ const FooterIllustrations = (props: FooterIllustrationsProp) => {
   // ** Vars
   const hidden = useMediaQuery(theme.breakpoints.down('md'))
 
-  if (!hidden) {
+  if (!hidden && image) {
     return (
-      <>
-        {!image ? (
-          <MaskImg alt='mask' src={`/images/pages/misc-mask-${theme.palette.mode}.png`} />
-        ) : typeof image === 'string' ? (
-          <MaskImg alt='mask' src={image} />
-        ) : (
-          image
-        )}
-      </>
+      <>{typeof image === 'string' ? <MaskImg alt='footer illustration' src={image} className={className} /> : image}</>
     )
   } else {
     return null

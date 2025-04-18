@@ -19,8 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       JOIN
           roles r ON ur.role_id = r.id
       WHERE
-          ur.email = '${email}';`
-      const userRoleResult = await ExecuteQuery(getUserRoleQuery)
+          ur.email = @email;`
+      const userRoleResult = await ExecuteQuery(getUserRoleQuery, { email })
 
       if (userRoleResult[0].length) {
         const { role, role_id, can_refresh, can_export, can_manage_own_account } = userRoleResult[0][0]
@@ -40,8 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         FROM
             role_reports
         WHERE
-            role_id = '${role_id}';`
-        const roleReportsResult = await ExecuteQuery(getRoleReportsQuery)
+            role_id = @roleId;`
+        const roleReportsResult = await ExecuteQuery(getRoleReportsQuery, { roleId: role_id })
 
         if (roleReportsResult[0].length) {
           const additionalRoleData = transformWorkspaceId(roleReportsResult[0])
@@ -92,8 +92,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           hyperlinks: null
         })
       }
+    } else {
+      res.status(400).json({ message: 'Invalid request: Email is required' })
     }
+
+    return res.status(400).json({ message: 'Email not provided' })
   } catch (error) {
-    res.status(403).json({ message: 'Failed to get role by user id' })
+    console.error(error)
+    res.status(500).json({ message: 'Internal server error' })
   }
 }

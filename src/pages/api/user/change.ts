@@ -1,7 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
+import { withAuth } from 'src/pages/api/middleware/authMiddleware'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'PATCH') {
     const user = req.body as {
       email: string
@@ -15,9 +16,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const id = user.id
 
     if (id) {
-      const findUserQuery = `SELECT TOP 1 * FROM users WHERE email='${user.email}'`
+      const findUserQuery = `SELECT TOP 1 * FROM users WHERE email=@email`
 
-      const userExists = await ExecuteQuery(findUserQuery)
+      const userExists = await ExecuteQuery(findUserQuery, { email: user.email })
 
       const me = userExists[0].find((dbUser: any) => dbUser.id === +id)
 
@@ -25,9 +26,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(401).json({ message: 'This email is already is use' })
       }
 
-      const query = `UPDATE users SET user_name = '${user.username}', email = '${user.email}', company = '${user.company}', name = '${user.name}', title = '${user.title}' WHERE id = '${id}';`
+      const query = `UPDATE users SET user_name = @username, email = @email, company = @company, name = @name, title = @title WHERE id = @id;`
 
-      await ExecuteQuery(query)
+      await ExecuteQuery(query, {
+        username: user.username,
+        email: user.email,
+        company: user.company,
+        name: user.name,
+        title: user.title,
+        id
+      })
 
       res.status(200).json(req.body)
     }
@@ -35,3 +43,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(405).json({ message: 'Method Not Allowed123' })
   }
 }
+
+export default withAuth(handler)

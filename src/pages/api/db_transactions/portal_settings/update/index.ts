@@ -6,11 +6,13 @@ import ExecuteQuery from 'src/utils/db'
 
 // ** Types
 import { PortalSetting } from 'src/@core/context/settingsContext'
+import { PermanentRoles } from 'src/context/types'
+import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
 // ** Constants
 import { nullifyPortalSettingsList } from '../get/all'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const settings = req.body
 
@@ -29,39 +31,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const updatePromises = settings.map(async (item: PortalSetting) => {
       const { id, value_type, value_date, value_string, value_boolean } = item
 
-      let updateSettingQuery = `
-        UPDATE portal_settings
-        SET updated_at = SYSUTCDATETIME()
-      `
+      let updateSettingQuery = ''
+      let params = {}
 
       switch (value_type) {
         case 'string':
-          updateSettingQuery += `, value_string = '${
-            typeof value_string === 'string' ? value_string.replace(/'/g, "''") : value_string
-          }'`
+          updateSettingQuery = `
+            UPDATE portal_settings
+            SET updated_at = SYSUTCDATETIME(), value_string = @valueString
+            WHERE id = @id;
+          `
+          params = { valueString: value_string, id }
           break
         case 'date':
-          updateSettingQuery += `, value_date = '${value_date}'`
+          updateSettingQuery = `
+            UPDATE portal_settings
+            SET updated_at = SYSUTCDATETIME(), value_date = @valueDate
+            WHERE id = @id;
+          `
+          params = { valueDate: value_date, id }
           break
         case 'boolean':
-          updateSettingQuery += `, value_boolean = ${Number(value_boolean)}`
+          updateSettingQuery = `
+            UPDATE portal_settings
+            SET updated_at = SYSUTCDATETIME(), value_boolean = @valueBoolean
+            WHERE id = @id;
+          `
+          params = { valueBoolean: Number(value_boolean), id }
           break
         default:
           throw new Error(`Unsupported value_type: ${value_type}`)
       }
 
-      updateSettingQuery += ` WHERE id = ${id};`
-
-      await ExecuteQuery(updateSettingQuery)
+      await ExecuteQuery(updateSettingQuery, params)
 
       // Fetch the updated setting from the database
       const updatedSettingQuery = `
         SELECT *
         FROM portal_settings
-        WHERE id = ${id};
+        WHERE id = @id;
       `
 
-      const updatedSetting = (await ExecuteQuery(updatedSettingQuery))?.[0]?.[0]
+      const updatedSetting = (await ExecuteQuery(updatedSettingQuery, { id }))?.[0]?.[0]
 
       if (nullifyPortalSettingsList.includes(updatedSetting?.setting)) {
         const valueFieldName = `value_${updatedSetting.value_type}`
@@ -89,3 +100,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ message: 'Internal server error', error })
   }
 }
+
+export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

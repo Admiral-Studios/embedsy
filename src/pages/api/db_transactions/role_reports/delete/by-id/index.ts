@@ -1,13 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
+import { PermanentRoles } from 'src/context/types'
+import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     try {
       const { id } = req.body
       if (id) {
-        const deleteQuery = `DELETE FROM role_reports WHERE id = '${id}'`
-        await ExecuteQuery(deleteQuery)
+        const deleteQuery = `DELETE FROM role_reports WHERE id = @id`
+        await ExecuteQuery(deleteQuery, { id })
 
         res.status(200).json({})
       } else {
@@ -16,5 +18,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (error) {
       res.status(403).json({ message: 'Failed to delete report' })
     }
+  } else {
+    res.status(405).json({ message: 'Method not allowed' })
   }
 }
+
+export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

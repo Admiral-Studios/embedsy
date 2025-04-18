@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
+import { withAuth } from 'src/pages/api/middleware/authMiddleware'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { roleId } = req.query as { roleId: string }
 
   if (!roleId) {
     res.status(400).json({ message: 'Role ID is required' })
-    
-return
+
+    return
   }
 
   try {
@@ -15,10 +16,10 @@ return
       SELECT rb.*, r.role
       FROM role_branding rb
       INNER JOIN roles r ON rb.role_id = r.id
-      WHERE rb.role_id = ${roleId};
+      WHERE rb.role_id = @roleId;
     `
 
-    let result = await ExecuteQuery(query)
+    let result = await ExecuteQuery(query, { roleId })
 
     if (result[0]?.length === 0) {
       const adminQuery = `
@@ -32,9 +33,9 @@ return
           SELECT rb.*, r.role
           FROM role_branding rb
           INNER JOIN roles r ON rb.role_id = r.id
-          WHERE rb.role_id = ${adminRoleId};
+          WHERE rb.role_id = @adminRoleId;
         `
-        result = await ExecuteQuery(query)
+        result = await ExecuteQuery(query, { adminRoleId })
       }
     }
 
@@ -47,3 +48,5 @@ return
     res.status(500).json({ message: 'Failed to retrieve role branding data', error: error.message })
   }
 }
+
+export default withAuth(handler)

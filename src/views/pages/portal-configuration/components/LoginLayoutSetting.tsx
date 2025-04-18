@@ -16,7 +16,7 @@ const loginLayoutOptions: Array<{ label: string; value: AppPortalSettings['login
 ]
 
 const LoginLayoutSetting = (props: Omit<SelectSettingProps, 'options'>) => {
-  return <SelectSetting {...props} options={loginLayoutOptions as any} />
+  return <SelectSetting {...props} options={loginLayoutOptions as any} clearable={false} />
 }
 
 export default LoginLayoutSetting

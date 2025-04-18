@@ -1,7 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
+import { PermanentRoles } from 'src/context/types'
+import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const findUserQuery = `SELECT DISTINCT r.id, r.role, ur.email FROM roles r
       INNER JOIN user_roles ur
@@ -15,3 +17,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(403).json({ message: 'Failed to get roles and emails' })
   }
 }
+
+export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])
