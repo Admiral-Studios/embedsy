@@ -1,18 +1,8 @@
 import { useContext, useMemo, useState } from 'react'
-import { Box, Button, CircularProgress, DialogContent, Grid, Tooltip, Typography } from '@mui/material'
+import { Box, Button, CircularProgress, DialogContent, Grid, Typography } from '@mui/material'
 import ConfirmationDialog from 'src/components/shared/ConfirmationDialog'
-import moment from 'moment'
-import uppercaseFirstLetter from 'src/utils/uppercaseFirstLetter'
 import PagesModal from './components/PagesModal'
-import Icon from 'src/@core/components/icon'
-import {
-  PageType,
-  PowerBiReportType,
-  ReportDataToUpdateType,
-  RoleType,
-  UserRoleType,
-  WorkspaceType
-} from 'src/types/types'
+import { PageType, PowerBiReportType, RoleType, UserRoleType, WorkspaceType } from 'src/types/types'
 import useDebounce from 'src/hooks/useDebounce'
 import Filter from './components/Filter'
 import CustomTextField from 'src/@core/components/mui/text-field'
@@ -21,48 +11,19 @@ import AddExistingRoleModal from './components/AddExistingRoleModal'
 import toast from 'react-hot-toast'
 import DensityButtons from './components/DensityButtons'
 import ItemList from 'src/components/shared/ItemList'
-import ItemCard from 'src/components/shared/ItemCard'
-import ChipItem from 'src/components/shared/ChipItem'
 import { CONFIG_ITEMS_PER_PAGE } from 'src/constants/pagination'
 import { DensityTypes } from './types/types'
-import { useSwitchableSetOfIds } from 'src/hooks/useSwitchableSetOfIds'
 import { PageTypesEnum } from 'src/enums/pageTypes'
 import { checkIfTypeIsPowerBi } from 'src/utils/configurationUtils'
 import { UserConfigurationContext } from 'src/context/UserConfiguration/UserConfigurationSharedDataContext'
 import { PagesContext } from 'src/context/UserConfiguration/PagesContext'
 import { RolesContext } from 'src/context/UserConfiguration/RolesContext'
-import { useAuth } from 'src/hooks/useAuth'
-import { styled } from '@mui/material/styles'
-import RefreshIcon from '@mui/icons-material/Refresh'
-
-const getTitleWithIcons = (title: string, dataForCheck?: ReportDataToUpdateType) => (
-  <>
-    {title}
-    {dataForCheck?.isRemoved && (
-      <Icon style={{ marginLeft: 4 }} fontSize={32} color='#f24242' icon='material-symbols:delete-outline' />
-    )}
-    {(dataForCheck?.shouldUpdateReportName || dataForCheck?.shouldUpdateWorkspaceName) && (
-      <Icon style={{ marginLeft: 4 }} fontSize={32} icon='mdi:rename-outline' />
-    )}
-  </>
-)
-
-const FooterItemHeaderStyled = styled(Typography)(() => ({
-  textAlign: 'center',
-  fontWeight: '500'
-}))
-
-const FooterItemValueStyled = styled(Typography)(() => ({
-  textAlign: 'center'
-}))
+import PagesCard from './components/PagesCard'
 
 const PagesScreen = () => {
-  const { handleRefreshClick, reportsNeedUpdating, syncReportsWithTenant, loadingData, workspaceError } =
-    useContext(UserConfigurationContext)
+  const { reportsNeedUpdating, loadingData, workspaceError } = useContext(UserConfigurationContext)
   const { removeAllPageRolesById, addUpdatePage, pages } = useContext(PagesContext)
-  const { isAdmin, isSuperAdmin } = useAuth()
   const { removeRoleReport, roles } = useContext(RolesContext)
-
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [openModal, setOpenModal] = useState(false)
   const [openRemoveModal, setOpenRemoveModal] = useState(false)
@@ -80,9 +41,6 @@ const PagesScreen = () => {
   const [roleUsers, setRoleUsers] = useState<UserRoleType[] | null>(null)
   const [existingPageToAddRole, setExistingPageToAddRole] = useState<PageType | null>(null)
   const [density, setDensity] = useState<DensityTypes>('standard')
-  const [isLoadingSync, setIsLoadingSync] = useState(false)
-
-  const { ids: loadedUsersPagesIds, toggleId: togglePageId } = useSwitchableSetOfIds()
 
   const rolesAvailableToAdd = useMemo(
     () => roles.filter(r => !existingPageToAddRole?.roles?.find(({ id }) => id === r.id)),
@@ -258,22 +216,6 @@ const PagesScreen = () => {
     return null
   }
 
-  const syncReports = async () => {
-    try {
-      setIsLoadingSync(true)
-
-      await toast.promise(syncReportsWithTenant(), {
-        loading: 'Synchronization is in progress',
-        success: 'Synchronization was successful',
-        error: 'Synchronization failed'
-      })
-
-      setIsLoadingSync(false)
-    } catch (error) {
-      setIsLoadingSync(false)
-    }
-  }
-
   if (loadingData) {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -328,47 +270,6 @@ const PagesScreen = () => {
           <DensityButtons density={density} onChangeDensity={d => setDensity(d)} />
         </Box>
       </Grid>
-
-      {(isAdmin || isSuperAdmin) && (
-        <Grid item xs={12}>
-          <Box
-            sx={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end'
-            }}
-          >
-            <Tooltip
-              title={
-                !reportsNeedUpdating.length
-                  ? 'All reports are up to date'
-                  : `${reportsNeedUpdating.length} reports need to be updated or deleted`
-              }
-            >
-              <span>
-                <Button
-                  variant='contained'
-                  onClick={syncReports}
-                  disabled={!reportsNeedUpdating.length || isLoadingSync}
-                  sx={{
-                    '&.Mui-disabled': {
-                      pointerEvents: 'auto',
-
-                      '&:hover': {
-                        backgroundColor: 'rgba(47, 43, 61, 0.12)',
-                        boxShadow: 'none'
-                      }
-                    }
-                  }}
-                >
-                  Sync Reports with Power BI Service
-                </Button>
-              </span>
-            </Tooltip>
-          </Box>
-        </Grid>
-      )}
     </Grid>
   )
 
@@ -392,175 +293,24 @@ const PagesScreen = () => {
         )}
 
         {pages.length > 0 ? (
-          searchedPages.slice(0, visiblePages).map(page => {
-            const previewPages = page.preview_pages
-            const status = page.last_refresh_status
-            const rowLevelRole = page.row_level_role ?? ''
-            const displayStatus = status ? uppercaseFirstLetter(status) : 'N/A'
-            const isReport = page.type !== PageTypesEnum.Iframe && page.type !== PageTypesEnum.Hyperlink
-
-            return (
-              <ItemCard
+          searchedPages
+            .slice(0, visiblePages)
+            .map(page => (
+              <PagesCard
                 key={page.id}
                 checked={selectedIds.includes(page.id)}
-                onSelect={handleSelect}
-                id={page.id}
-                title={getTitleWithIcons(
-                  page.type === PageTypesEnum.Iframe
-                    ? page.iframe_title || ''
-                    : page.type === PageTypesEnum.Hyperlink
-                    ? `${page.hyperlink_title} (${page.hyperlink_url})` || ''
-                    : page.report,
-                  page.dataToUpdate!
-                )}
+                handleSelect={handleSelect}
+                page={page}
                 density={density}
-                isRemoved={!!page?.dataToUpdate?.isRemoved}
-                topControls={
-                  <>
-                    {page.type === PageTypesEnum.PowerBiReport && (
-                      <Button
-                        variant='outlined'
-                        onClick={() => handleRefreshClick(status, page.workspace_id, page.dataset_id)}
-                        startIcon={
-                          <RefreshIcon
-                            sx={{
-                              ...(page?.last_refresh_status === 'unknown' && {
-                                animation: 'spin 2s linear infinite',
-                                '@keyframes spin': {
-                                  '0%': {
-                                    transform: 'rotate(0deg)'
-                                  },
-                                  '100%': {
-                                    transform: 'rotate(360deg)'
-                                  }
-                                }
-                              })
-                            }}
-                          />
-                        }
-                      >
-                        {page?.last_refresh_status === 'unknown' ? 'Refreshing Page' : 'Refresh Page'}
-                      </Button>
-                    )}
-
-                    <Button variant='outlined' onClick={() => clickEditButton(page)}>
-                      Edit Page
-                    </Button>
-
-                    <Button
-                      variant='outlined'
-                      color='error'
-                      onClick={() => {
-                        setOpenRemoveModal(true)
-                        setPageIdToDelete(page.id)
-                        setSelectedIds(prev => prev.filter(prevId => prevId !== page.id))
-                      }}
-                    >
-                      Delete Page
-                    </Button>
-                  </>
-                }
-                footerControls={
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, width: '100%', mt: 8 }}>
-                    <Box sx={{ display: 'flex', gap: 6, pl: 12 }}>
-                      {rowLevelRole && (
-                        <Box>
-                          <FooterItemHeaderStyled>Row Level Role</FooterItemHeaderStyled>
-                          <FooterItemValueStyled>{rowLevelRole}</FooterItemValueStyled>
-                        </Box>
-                      )}
-
-                      {isReport && (
-                        <Box>
-                          <FooterItemHeaderStyled>Preview pages</FooterItemHeaderStyled>
-
-                          <Box sx={{ textAlign: 'center' }}>
-                            <Icon icon={previewPages ? 'mdi:check' : 'mdi:close'} />
-                          </Box>
-                        </Box>
-                      )}
-
-                      {isReport && (
-                        <>
-                          <Box>
-                            <FooterItemHeaderStyled>Last refresh status</FooterItemHeaderStyled>
-
-                            <FooterItemValueStyled>{displayStatus}</FooterItemValueStyled>
-                          </Box>
-
-                          <Box>
-                            <FooterItemHeaderStyled>Last refresh date</FooterItemHeaderStyled>
-
-                            <FooterItemValueStyled>
-                              {page.last_refresh_date
-                                ? moment(page.last_refresh_date).format('YYYY/MM/DD - HH:mm:ss')
-                                : '-'}
-                            </FooterItemValueStyled>
-                          </Box>
-                        </>
-                      )}
-                    </Box>
-                  </Box>
-                }
-              >
-                <Box sx={{ mt: 4, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
-                  {(loadedUsersPagesIds.has(page.id) ? page?.users : page.users.slice(0, 10))?.map(user => (
-                    <ChipItem variant='outlined' key={user.id} size='medium' label={user.email} color='primary' />
-                  ))}
-
-                  {page.users?.length > 10 && (
-                    <Button
-                      variant='contained'
-                      size='small'
-                      sx={{ borderRadius: 4 }}
-                      onClick={() => togglePageId(page.id)}
-                    >
-                      {loadedUsersPagesIds.has(page.id) ? 'Hide' : 'Show More'}
-                    </Button>
-                  )}
-                </Box>
-
-                <Box sx={{ mt: 8, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
-                  {page.roles.map(role => (
-                    <ChipItem
-                      key={role.id}
-                      size='medium'
-                      label={role.role}
-                      color='primary'
-                      onClick={e => {
-                        e.stopPropagation()
-                        setRoleUsers(page.users.filter(({ role_id }) => role_id === role.id))
-                      }}
-                      onDelete={() =>
-                        setRoleToRemove({
-                          role: role.role,
-                          parentPageId: role.parentPageId,
-                          report: page.type === PageTypesEnum.PowerBiReport ? page.report : page.iframe_title,
-                          pageId: page.id
-                        })
-                      }
-                      sx={{
-                        height: '26px',
-                        '&:hover': {
-                          backgroundColor: '#FFC815',
-                          boxShadow: '0px 2px 4px 0px rgba(29, 29, 29, 0.251)'
-                        }
-                      }}
-                    />
-                  ))}
-
-                  <Button
-                    variant='outlined'
-                    size='small'
-                    sx={{ borderRadius: 4 }}
-                    onClick={() => setExistingPageToAddRole(page)}
-                  >
-                    Add Role +
-                  </Button>
-                </Box>
-              </ItemCard>
-            )
-          })
+                clickEditButton={clickEditButton}
+                setOpenRemoveModal={setOpenRemoveModal}
+                setPageIdToDelete={setPageIdToDelete}
+                setSelectedIds={setSelectedIds}
+                setRoleUsers={setRoleUsers}
+                setRoleToRemove={setRoleToRemove}
+                setExistingPageToAddRole={setExistingPageToAddRole}
+              />
+            ))
         ) : !workspaceError ? (
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
             <Typography variant='h6'>There are no pages available.</Typography>
