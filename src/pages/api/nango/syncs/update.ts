@@ -1,12 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { nango } from '..'
 import { NangoSync } from 'src/context/types'
+import { getNango } from 'src/lib/nango'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST'])
 
     return res.status(405).end(`Method ${req.method} Not Allowed`)
+  }
+  const nango = await getNango()
+
+  if (!nango) {
+    return res.status(500).json({ message: 'Nango instance not found' })
   }
 
   const { syncs } = req.body

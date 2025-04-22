@@ -1,11 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { nango } from '../..'
+import { getNango } from 'src/lib/nango'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ ok: false, message: 'Method not allowed' })
 
     return
+  }
+
+  const nango = await getNango()
+
+  if (!nango) {
+    return res.status(500).json({ message: 'Nango instance not found' })
   }
 
   try {

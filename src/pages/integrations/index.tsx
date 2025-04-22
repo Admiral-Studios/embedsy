@@ -3,7 +3,6 @@ import { Grid, Typography } from '@mui/material'
 
 import SyncsSettingsModal from './_components/SyncsSettingsModal'
 import { NangoContext } from 'src/context/NangoContext'
-import AddNewIntegration from './_components/AddNewIntegration'
 import IntegrationCard from './_components/IntegrationCard'
 
 const IntegrationsPage = () => {
@@ -24,17 +23,6 @@ const IntegrationsPage = () => {
         <Grid item container xs={12} spacing={4}>
           <Grid item xs={12}>
             <Typography variant='h3'>Integrations</Typography>
-          </Grid>
-
-          <Grid
-            item
-            xs={12}
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end'
-            }}
-          >
-            <AddNewIntegration />
           </Grid>
 
           <Grid item xs={12} display='flex' gap={2} flexDirection='column'>

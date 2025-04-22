@@ -1,10 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { nango } from '../index'
+import { getNango } from 'src/lib/nango'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { provider, connectionId } = req.query as {
+  const { provider } = req.query as {
     provider: string
     connectionId: string
+  }
+
+  const nango = await getNango()
+
+  if (!nango) {
+    return res.status(500).json({ message: 'Nango instance not found' })
   }
 
   try {

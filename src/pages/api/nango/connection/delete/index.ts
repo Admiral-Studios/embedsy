@@ -1,12 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { nango } from '../../index'
 import ExecuteQuery from 'src/utils/db'
+import { getNango } from 'src/lib/nango'
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   const { providerConfigKey, connectionId } = request.body
-
   if (request.method !== 'DELETE') {
     return response.status(405).json({ error: 'Method not allowed' })
+  }
+
+  const nango = await getNango()
+
+  if (!nango) {
+    return response.status(500).json({ message: 'Nango instance not found' })
   }
 
   if (!providerConfigKey || !connectionId) {
