@@ -51,7 +51,6 @@ interface UserConfigurationContextProps {
   reportsNeedUpdating: RoleReportsWithUpdateDataType[]
   syncReportsWithTenant: () => Promise<void>
   loadingData: boolean
-  workspaceError: string | null
 }
 
 interface UserConfigurationProviderProps {
@@ -84,8 +83,7 @@ export const UserConfigurationContext = createContext<UserConfigurationContextPr
   handleRefreshClick: () => Promise.resolve(),
   reportsNeedUpdating: [],
   syncReportsWithTenant: () => Promise.resolve(),
-  loadingData: false,
-  workspaceError: null
+  loadingData: false
 })
 
 export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationProviderProps> = ({ children }) => {
@@ -103,7 +101,6 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
   const [datasetsByWorkspace, setDatasetsByWorkspace] = useState<PowerBIDatasetType[] | any>([])
   const [reportsNeedUpdating, setReportsNeedUpdating] = useState<RoleReportsWithUpdateDataType[]>([])
   const [loadingData, setLoadingData] = useState(false)
-  const [workspaceError, setWorkspaceError] = useState<string | null>(null)
 
   const syncRoles = useRef(roles)
   const syncUserRoles = useRef(userRoles)
@@ -135,19 +132,9 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
     if (hasAdminPrivileges && workspaces.length === 0) {
       try {
         const response = await axios.get('/api/powerbi/workspaces')
-
-        if (Array.isArray(response.data)) {
-          setWorkspaces(response.data)
-          setWorkspaceError(null)
-        } else {
-          setWorkspaces([])
-          setWorkspaceError(null)
-        }
-      } catch (error: any) {
-        const errorMessage =
-          error.response?.data?.message || error.response?.data?.error || error.message || 'Unknown error'
-        setWorkspaces([])
-        setWorkspaceError(`We could not get your workspaces. ${errorMessage}`)
+        setWorkspaces(response.data)
+      } catch (error) {
+        console.error('Error fetching workspaces:', error)
       }
     }
   }, [hasAdminPrivileges, workspaces.length])
@@ -270,60 +257,37 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
     setLoadingData(true)
     if (hasAdminPrivileges) {
       try {
-        const fetchRoles = axios
-          .get<RoleType[]>('/api/db_transactions/role/get/all')
-          .then(response => {
-            const roles = response.data
-            syncRoles.current = roles
-            setRoles(roles)
-
-            return roles
-          })
-          .catch(() => {
-            return null
-          })
-
-        const fetchUserRoles = axios
-          .get<UserRoleType[]>('/api/db_transactions/user_roles/get/all')
-          .then(response => {
-            const userRoles = response.data
-            syncUserRoles.current = userRoles
-            setUserRoles(userRoles)
-
-            return userRoles
-          })
-          .catch(() => {
-            return null
-          })
-
-        const fetchRoleReports = axios
-          .get<RoleReportsWithUpdateDataType[]>(
+        const [rolesResponse, userRolesResponse, roleReportsResponse] = await Promise.all([
+          axios.get<RoleType[]>('/api/db_transactions/role/get/all'),
+          axios.get<UserRoleType[]>('/api/db_transactions/user_roles/get/all'),
+          axios.get<RoleReportsWithUpdateDataType[]>(
             `/api/db_transactions/role_reports/get/all${isAdmin || isSuperAdmin ? '?is_admin=true' : ''}`
           )
-          .then(response => {
-            const roleReports = response.data
-            syncRoleReports.current = roleReports
-            setRoleReports(roleReports)
+        ])
 
-            setReportsNeedUpdating(
-              roleReports.filter(
-                ({ dataToUpdate }) =>
-                  dataToUpdate?.isRemoved ||
-                  dataToUpdate?.shouldUpdateReportName ||
-                  dataToUpdate?.shouldUpdateWorkspaceName
-              )
-            )
+        const roles = rolesResponse.data
+        const userRoles = userRolesResponse.data
+        const roleReports = roleReportsResponse.data
 
-            return roleReports
-          })
-          .catch(() => {
-            return null
-          })
+        syncRoles.current = roles
+        syncUserRoles.current = userRoles
+        syncRoleReports.current = roleReports
 
-        await Promise.all([fetchRoles, fetchUserRoles, fetchRoleReports])
+        setReportsNeedUpdating(
+          roleReports.filter(
+            ({ dataToUpdate }) =>
+              dataToUpdate?.isRemoved || dataToUpdate?.shouldUpdateReportName || dataToUpdate?.shouldUpdateWorkspaceName
+          )
+        )
+
+        setUserRoles(userRoles)
+        setRoleReports(roleReports)
+        setRoles(roles)
 
         setLocalData()
-      } catch (error) {}
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
     } else if (canRefresh && user?.role) {
       try {
         const roleReportsResponse = await axios.post('/api/db_transactions/role_reports/get/by_role', {
@@ -332,19 +296,19 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
         setRoleReports(roleReportsResponse.data)
         syncRoleReports.current = roleReportsResponse.data
         setLocalData()
-      } catch (error) {}
+      } catch (error) {
+        console.error('Error fetching role reports:', error)
+      }
     }
     setLoadingData(false)
-  }, [hasAdminPrivileges, canRefresh, user, isAdmin, isSuperAdmin])
+  }, [hasAdminPrivileges, canRefresh, user])
 
   const handleGetReports = async (workspaceId: string | null) => {
     try {
       const response = await axios.post(`/api/powerbi/reports`, { workspaceId: workspaceId })
       setReportsByWorkspace(response.data)
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || error.response?.data?.error || error.message || 'Unknown error'
-      toast.error(`Error fetching reports: ${errorMessage}`)
+    } catch (error) {
+      toast.error(`Error fetching reports: ${error}`)
     }
   }
 
@@ -352,10 +316,8 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
     try {
       const response = await axios.post(`/api/powerbi/datasets`, { workspaceId: workspaceId })
       setDatasetsByWorkspace(response.data)
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || error.response?.data?.error || error.message || 'Unknown error'
-      toast.error(`Error fetching datasets: ${errorMessage}`)
+    } catch (error) {
+      console.error('Error fetching datasets:', error)
     }
   }
 
@@ -390,7 +352,9 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
           )
         )
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('Error checking refresh status:', error)
+    }
   }
 
   const handleBeginRefresh = async (workspaceId: string, datasetId: string) => {
@@ -421,7 +385,9 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
           )
         )
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('Error refreshing dataset:', error)
+    }
   }
 
   const handleCancelRefresh = async (workspaceId: string, datasetId: string) => {
@@ -440,7 +406,9 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
           )
         )
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('Error canceling refresh:', error)
+    }
   }
 
   const syncReportsWithTenant = async () => {
@@ -539,8 +507,7 @@ export const UserConfigurationSharedDataContextProvider: FC<UserConfigurationPro
         handleRefreshClick,
         reportsNeedUpdating,
         syncReportsWithTenant,
-        loadingData,
-        workspaceError
+        loadingData
       }}
     >
       {children}

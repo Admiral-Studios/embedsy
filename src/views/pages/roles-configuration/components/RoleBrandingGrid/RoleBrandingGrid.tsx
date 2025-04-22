@@ -164,17 +164,9 @@ const RoleBrandingGrid = () => {
     setOriginalRow(null)
   }
 
-  const validateWidth = (value: number, envDefault: string | undefined, min: number, max: number) => {
-    if (value === undefined || value === null || value === 0) {
-      return envDefault ? parseInt(envDefault, 10) : min
-    }
-
-    if (value < min) {
-      return min
-    }
-    if (value > max) {
-      return max
-    }
+  const validateWidth = (value: number, min: number, max: number) => {
+    if (value < min) return min
+    if (value > max) return max
 
     return value
   }
@@ -193,14 +185,9 @@ const RoleBrandingGrid = () => {
       powerbi_dark_theme: rowState.powerbi_dark_theme,
       login_page_image: rowState.login_page_image,
       registration_page_image: rowState.registration_page_image,
-      main_logo_width: validateWidth(newRow.main_logo_width, process.env.NEXT_PUBLIC_MAIN_LOGO_WIDTH, 10, 300),
-      favicon_width: validateWidth(newRow.favicon_width, process.env.NEXT_PUBLIC_FAVICON_WIDTH, 10, 50),
-      loading_spinner_width: validateWidth(
-        newRow.loading_spinner_width,
-        process.env.NEXT_PUBLIC_SPINNER_WIDTH,
-        20,
-        300
-      ),
+      main_logo_width: validateWidth(newRow.main_logo_width, 10, 150),
+      favicon_width: validateWidth(newRow.favicon_width, 10, 50),
+      loading_spinner_width: validateWidth(newRow.loading_spinner_width, 20, 300),
       isNew: false
     } as CustomGridRowModel
 
@@ -403,23 +390,7 @@ const RoleBrandingGrid = () => {
     minNumber: number,
     maxNumber: number
   ) => {
-    let envDefault: string | undefined
-
-    switch (params.field) {
-      case 'main_logo_width':
-        envDefault = process.env.NEXT_PUBLIC_MAIN_LOGO_WIDTH
-        break
-      case 'favicon_width':
-        envDefault = process.env.NEXT_PUBLIC_FAVICON_WIDTH
-        break
-      case 'loading_spinner_width':
-        envDefault = process.env.NEXT_PUBLIC_SPINNER_WIDTH
-        break
-      default:
-        envDefault = undefined
-    }
-
-    const value = validateWidth(Number(e.target.value), envDefault, minNumber, maxNumber)
+    const value = validateWidth(Number(e.target.value), minNumber, maxNumber)
     params.api.setEditCellValue({ id: params.id, field: params.field, value })
   }
 
@@ -531,9 +502,9 @@ const RoleBrandingGrid = () => {
           <EditNumberInput
             type='number'
             defaultValue={params.value}
-            onChange={e => handleInputChange(params, e, 10, 300)}
+            onChange={e => handleInputChange(params, e, 10, 150)}
           />
-          <Tooltip title='Minimum width of a logo should be 10, while maximum width should be 300'>
+          <Tooltip title='Minimum width of a logo should be 10, while maximum width should be 150'>
             <IconButton>
               <Icon icon='tabler:info-circle' fontSize={20} />
             </IconButton>

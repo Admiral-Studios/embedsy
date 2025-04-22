@@ -6,7 +6,6 @@ import { RoleService } from 'src/services/configuration/RoleService'
 import { UsersContext } from './UsersContext'
 import { RoleReportsService } from 'src/services/configuration/RoleReportsService'
 import { PagesContext } from './PagesContext'
-import { AdminRolesContext } from '../AdminRolesContext'
 
 type ServiceResponse = 'success' | 'error'
 
@@ -56,8 +55,8 @@ export const RolesContextProvider: FC<RolesProviderProps> = ({ children }) => {
   } = useContext(UserConfigurationContext)
 
   const { assignUserToRole, removeUsers } = useContext(UsersContext)
+
   const { addUpdatePage } = useContext(PagesContext)
-  const { refreshRoles } = useContext(AdminRolesContext)
 
   const addNewRole = async (
     id: number | null,
@@ -70,49 +69,99 @@ export const RolesContextProvider: FC<RolesProviderProps> = ({ children }) => {
   ): Promise<ServiceResponse> => {
     const existingRole = allRolesData.find(role => role.id === id)
 
-    try {
-      if (!existingRole) {
-        const newRoleId = await RoleService.createRole({
+    if (!existingRole) {
+      const newRoleId = await RoleService.createRole({
+        role: newRole,
+        can_refresh: canRefresh,
+        can_export: canExport,
+        can_manage_own_account: canManageOwnAccount
+      })
+
+      const updatedRoles = [
+        ...roles,
+        {
           role: newRole,
+          id: newRoleId,
           can_refresh: canRefresh,
           can_export: canExport,
           can_manage_own_account: canManageOwnAccount
-        })
+        }
+      ]
 
-        const updatedRoles = [
-          ...roles,
-          {
-            role: newRole,
-            id: newRoleId,
-            can_refresh: canRefresh,
-            can_export: canExport,
-            can_manage_own_account: canManageOwnAccount
-          }
-        ]
+      setRoles(updatedRoles)
+      syncRoles.current = updatedRoles
 
-        setRoles(updatedRoles)
-        syncRoles.current = updatedRoles
+      if (users?.length) {
+        await Promise.all(users.map(user => assignUserToRole(newRoleId, user, true)))
+      }
 
-        if (users?.length) {
-          const results = await Promise.all(users.map(user => assignUserToRole(newRoleId, user, true)))
-          const errors = results.filter(r => !r.success)
-          if (errors.length > 0) {
-            toast.error(
-              errors.length === 1
-                ? errors[0].error || 'Failed to assign user'
-                : `Failed to assign ${errors.length} user(s). Some users may have special permissions.`
-            )
-            
-return 'error'
-          }
+      if (pages?.length) {
+        await Promise.all(
+          pages.map(page => {
+            const roleForPage = {
+              role: newRole,
+              id: newRoleId,
+              can_refresh: canRefresh,
+              can_export: canExport,
+              can_manage_own_account: canManageOwnAccount,
+              parentPageId: null
+            }
+
+            return addUpdatePage({
+              ...page,
+              report: { name: page.report || '', id: page.report_id || '', datasetId: page.dataset_id },
+              workspace: { id: page.workspace_id || '', name: page.workspace || '' },
+              roles: [roleForPage]
+            })
+          })
+        )
+      }
+
+      setLocalData()
+    } else {
+      await RoleService.updateRole({
+        role: newRole,
+        id,
+        can_refresh: canRefresh,
+        can_export: canExport,
+        can_manage_own_account: canManageOwnAccount
+      })
+
+      const updatedRoles = roles.map(role =>
+        role.id === id
+          ? {
+              role: newRole,
+              id: id,
+              can_refresh: canRefresh,
+              can_export: canExport,
+              can_manage_own_account: canManageOwnAccount
+            }
+          : role
+      )
+
+      if (users) {
+        const addedUsers = users.filter(user => !existingRole.users.find(({ email }) => email === user))
+
+        if (addedUsers?.length) {
+          await Promise.all(users.map(user => assignUserToRole(existingRole.id, user)))
         }
 
-        if (pages?.length) {
+        const removedUsers = existingRole.users.filter(({ email }) => !users.find(user => user === email))
+
+        if (removedUsers.length) {
+          await removeUsers(removedUsers.map(({ id }) => id))
+        }
+      }
+
+      if (pages) {
+        const addedPages = pages.filter(page => !existingRole.pages.find(({ id }) => id === page?.id))
+
+        if (addedPages.length) {
           await Promise.all(
-            pages.map(page => {
+            addedPages.map(page => {
               const roleForPage = {
                 role: newRole,
-                id: newRoleId,
+                id: existingRole.id,
                 can_refresh: canRefresh,
                 can_export: canExport,
                 can_manage_own_account: canManageOwnAccount,
@@ -129,106 +178,25 @@ return 'error'
           )
         }
 
-        setLocalData()
+        const removedPages = existingRole.pages.filter(({ id }) => !pages.find(page => page.id === id))
 
-        await refreshRoles()
-      } else {
-        await RoleService.updateRole({
-          role: newRole,
-          id,
-          can_refresh: canRefresh,
-          can_export: canExport,
-          can_manage_own_account: canManageOwnAccount
-        })
-
-        const updatedRoles = roles.map(role =>
-          role.id === id
-            ? {
-                role: newRole,
-                id: id,
-                can_refresh: canRefresh,
-                can_export: canExport,
-                can_manage_own_account: canManageOwnAccount
-              }
-            : role
-        )
-
-        if (users) {
-          const addedUsers = users.filter(user => !existingRole.users.find(({ email }) => email === user))
-
-          if (addedUsers?.length) {
-            const results = await Promise.all(addedUsers.map(user => assignUserToRole(existingRole.id, user)))
-            const errors = results.filter(r => !r.success)
-            if (errors.length > 0) {
-              return 'error'
-            }
-          }
-
-          const removedUsers = existingRole.users.filter(({ email }) => !users.find(user => user === email))
-
-          if (removedUsers.length) {
-            try {
-              await removeUsers(removedUsers.map(({ id }) => id))
-            } catch (error) {
-              return 'error'
-            }
-          }
+        if (removedPages.length) {
+          await Promise.all(
+            removedPages.map(page => {
+              return removeRoleReport(page.id)
+            })
+          )
         }
-
-        if (pages) {
-          const addedPages = pages.filter(page => !existingRole.pages.find(({ id }) => id === page?.id))
-
-          if (addedPages.length) {
-            await Promise.all(
-              addedPages.map(page => {
-                const roleForPage = {
-                  role: newRole,
-                  id: existingRole.id,
-                  can_refresh: canRefresh,
-                  can_export: canExport,
-                  can_manage_own_account: canManageOwnAccount,
-                  parentPageId: null
-                }
-
-                return addUpdatePage({
-                  ...page,
-                  report: { name: page.report || '', id: page.report_id || '', datasetId: page.dataset_id },
-                  workspace: { id: page.workspace_id || '', name: page.workspace || '' },
-                  roles: [roleForPage]
-                })
-              })
-            )
-          }
-
-          const removedPages = existingRole.pages.filter(({ id }) => !pages.find(page => page.id === id))
-
-          if (removedPages.length) {
-            await Promise.all(
-              removedPages.map(page => {
-                return removeRoleReport(page.id)
-              })
-            )
-          }
-        }
-
-        syncRoles.current = updatedRoles
-        setLocalData()
-        setRoles(updatedRoles)
-        await refreshRoles()
       }
 
-      return 'success'
-    } catch (error: any) {
-      if (error.response?.status === 403) {
-        const errorMessage = error.response?.data?.message || 'Failed to update role'
-        toast.error(errorMessage)
-      } else if (error.response?.status === 409) {
-        const errorMessage = error.response?.data?.message || 'Role already exists'
-        toast.error(errorMessage)
-      }
-      
-return 'error'
+      syncRoles.current = updatedRoles
+
+      setLocalData()
+
+      setRoles(updatedRoles)
     }
+
+    return 'success'
   }
 
   const removeRoleReport = async (id: number) => {
@@ -260,8 +228,6 @@ return 'error'
       syncUserRoles.current = updatedUserRoles
 
       setLocalData()
-
-      await refreshRoles()
     } catch (error) {
       toast.error('Failed to remove page')
       console.error(error)

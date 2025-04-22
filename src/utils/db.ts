@@ -1,4 +1,4 @@
-import sql, { ConnectionPool, Request } from 'mssql'
+import sql, { ConnectionPool, Request, VarChar } from 'mssql'
 import * as process from 'process'
 
 export const dbConfig: any = {
@@ -12,14 +12,11 @@ export const dbConfig: any = {
   }
 }
 
-export default async function ExecuteQuery(query: string, params: Record<string, any> = {}): Promise<any> {
+export default async function ExecuteQuery(query: string): Promise<any> {
   try {
     const pool: ConnectionPool = await sql.connect(dbConfig)
     const request: Request = pool.request()
-
-    Object.entries(params).forEach(([key, value]) => {
-      request.input(key, value)
-    })
+    request.input('input_parameter', VarChar, 'value') // Add this line if you have parameters in your query.
 
     const result = await request.query(query)
 

@@ -31,7 +31,9 @@ export const preloadPowerBI = async (workspaceId: string, reportId?: string) => 
     preloadedReports.add(cacheKey)
 
     return result
-  } catch (error) {}
+  } catch (error) {
+    console.error('Error preloading Power BI report:', error)
+  }
 }
 
 export const preloadThemes = async (darkThemeUrl?: string, lightThemeUrl?: string) => {

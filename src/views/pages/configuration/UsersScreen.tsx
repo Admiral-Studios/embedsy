@@ -156,122 +156,116 @@ const UsersScreen = () => {
     </Grid>
   )
 
+  if (!users.length)
+    return (
+      <>
+        {renderControls}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
+          <Typography variant='h6'>There are no users available.</Typography>
+        </Box>
+      </>
+    )
+
   return (
     <>
       <ItemList controls={renderControls}>
-        {users.length > 0 ? (
-          searchedUsers.slice(0, visibleUsers).map(user => (
-            <ItemCard
-              key={user.id}
-              checked={selectedIds.includes(user?.id)}
-              onSelect={handleSelect}
-              id={user?.id}
-              title={user.email}
-              density={density}
-              showCheckbox={user?.role === PermanentRoles.guest ? false : true}
-              topControls={
-                <>
-                  <Button variant='outlined' onClick={() => clickEditButton(user)}>
-                    Edit User
-                  </Button>
+        {searchedUsers.slice(0, visibleUsers).map(user => (
+          <ItemCard
+            key={user.id}
+            checked={selectedIds.includes(user?.id)}
+            onSelect={handleSelect}
+            id={user?.id}
+            title={user.email}
+            density={density}
+            showCheckbox={user?.role === PermanentRoles.guest ? false : true}
+            topControls={
+              <>
+                <Button variant='outlined' onClick={() => clickEditButton(user)}>
+                  Edit User
+                </Button>
 
-                  <Button
-                    variant='outlined'
-                    color='error'
-                    onClick={() => {
-                      setUserToDeleteRole(user?.role)
-                      setUserIdToDelete(user.id)
-                    }}
-                  >
-                    Delete User
-                  </Button>
-                </>
-              }
-            >
-              <Box sx={{ mt: 4, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
-                {(loadedRolesUsersIds.has(user.id) ? user.roles : user.roles.slice(0, 10))?.map(role => (
-                  <ChipItem
-                    variant='outlined'
-                    key={role.id}
-                    size='medium'
-                    label={role.role}
-                    onClick={e => {
-                      e.stopPropagation()
-                      setRolePages(user.pages.filter(({ role_id }) => role_id === role.id))
-                    }}
-                    onDelete={
-                      ![PermanentRoles.guest, PermanentRoles.admin, PermanentRoles.super_admin].includes(
-                        role.role as PermanentRoles
-                      )
-                        ? () => setRoleToRemove(role)
-                        : undefined
+                <Button
+                  variant='outlined'
+                  color='error'
+                  onClick={() => {
+                    setUserToDeleteRole(user?.role)
+                    setUserIdToDelete(user.id)
+                  }}
+                >
+                  Delete User
+                </Button>
+              </>
+            }
+          >
+            <Box sx={{ mt: 4, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
+              {(loadedRolesUsersIds.has(user.id) ? user.roles : user.roles.slice(0, 10))?.map(role => (
+                <ChipItem
+                  variant='outlined'
+                  key={role.id}
+                  size='medium'
+                  label={role.role}
+                  onClick={e => {
+                    e.stopPropagation()
+                    setRolePages(user.pages.filter(({ role_id }) => role_id === role.id))
+                  }}
+                  onDelete={
+                    ![PermanentRoles.guest, PermanentRoles.admin, PermanentRoles.super_admin].includes(
+                      role.role as PermanentRoles
+                    )
+                      ? () => setRoleToRemove(role)
+                      : undefined
+                  }
+                  color='primary'
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: '#FFC815',
+                      boxShadow: '0px 2px 4px 0px rgba(29, 29, 29, 0.251)'
                     }
-                    color='primary'
-                    sx={{
-                      '&:hover': {
-                        backgroundColor: '#FFC815',
-                        boxShadow: '0px 2px 4px 0px rgba(29, 29, 29, 0.251)'
-                      }
-                    }}
-                  />
-                ))}
+                  }}
+                />
+              ))}
 
-                {user.roles?.length > 10 && (
-                  <Button
-                    variant='contained'
-                    size='small'
-                    sx={{ borderRadius: 4 }}
-                    onClick={() => toggleRoleId(user.id)}
-                  >
-                    {loadedRolesUsersIds.has(user.id) ? 'Hide' : 'Show More'}
-                  </Button>
-                )}
+              {user.roles?.length > 10 && (
+                <Button variant='contained' size='small' sx={{ borderRadius: 4 }} onClick={() => toggleRoleId(user.id)}>
+                  {loadedRolesUsersIds.has(user.id) ? 'Hide' : 'Show More'}
+                </Button>
+              )}
 
-                {/* <Button variant='outlined' size='small' sx={{ borderRadius: 4 }}>
-                  Assign Roles +
-                </Button> */}
-              </Box>
+              {/* <Button variant='outlined' size='small' sx={{ borderRadius: 4 }}>
+                Assign Roles +
+              </Button> */}
+            </Box>
 
-              <Box sx={{ mt: 8, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
-                {(loadedPagesUsersIds.has(user.id) ? user.pages : user.pages.slice(0, 10))?.map(page => (
-                  <ChipItem
-                    key={page.id}
-                    size='medium'
-                    label={
-                      page.type === PageTypesEnum.Iframe
-                        ? page.iframe_title
-                        : page.type === PageTypesEnum.Hyperlink
-                        ? page.hyperlink_title
-                        : page.report
-                    }
-                    color={
-                      page.type === PageTypesEnum.Iframe
-                        ? 'info'
-                        : page.type === PageTypesEnum.Hyperlink
-                        ? 'warning'
-                        : 'primary'
-                    }
-                  />
-                ))}
+            <Box sx={{ mt: 8, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
+              {(loadedPagesUsersIds.has(user.id) ? user.pages : user.pages.slice(0, 10))?.map(page => (
+                <ChipItem
+                  key={page.id}
+                  size='medium'
+                  label={
+                    page.type === PageTypesEnum.Iframe
+                      ? page.iframe_title
+                      : page.type === PageTypesEnum.Hyperlink
+                      ? page.hyperlink_title
+                      : page.report
+                  }
+                  color={
+                    page.type === PageTypesEnum.Iframe
+                      ? 'info'
+                      : page.type === PageTypesEnum.Hyperlink
+                      ? 'warning'
+                      : 'primary'
+                  }
+                />
+              ))}
 
-                {user.pages?.length > 10 && (
-                  <Button
-                    variant='contained'
-                    size='small'
-                    sx={{ borderRadius: 4 }}
-                    onClick={() => togglePageId(user.id)}
-                  >
-                    {loadedPagesUsersIds.has(user.id) ? 'Hide' : 'Show More'}
-                  </Button>
-                )}
-              </Box>
-            </ItemCard>
-          ))
-        ) : (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
-            <Typography variant='h6'>There are no users available.</Typography>
-          </Box>
-        )}
+              {user.pages?.length > 10 && (
+                <Button variant='contained' size='small' sx={{ borderRadius: 4 }} onClick={() => togglePageId(user.id)}>
+                  {loadedPagesUsersIds.has(user.id) ? 'Hide' : 'Show More'}
+                </Button>
+              )}
+            </Box>
+          </ItemCard>
+        ))}
       </ItemList>
 
       {visibleUsers < searchedUsers.length && (

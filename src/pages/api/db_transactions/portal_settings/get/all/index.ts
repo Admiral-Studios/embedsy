@@ -4,7 +4,6 @@ import ExecuteQuery from 'src/utils/db'
 // ** Types
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import { PortalSettingNames, PortalSetting } from 'src/@core/context/settingsContext'
-import { withAuth } from 'src/pages/api/middleware/authMiddleware'
 
 // ** List of settings that need to have value_string replaced with null
 export const nullifyPortalSettingsList: PortalSettingNames[] = [PortalSettingNames.service_principal_secret]
@@ -34,7 +33,7 @@ export const getAllPortalSettingsFromDB = async (): Promise<PortalSetting[]> => 
   return []
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const settingsResult = await getAllPortalSettingsFromDB()
 
@@ -48,5 +47,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(500).json({ message: 'Internal server error' })
   }
 }
-
-export default withAuth(handler)

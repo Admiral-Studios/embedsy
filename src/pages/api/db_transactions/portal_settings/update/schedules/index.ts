@@ -1,7 +1,5 @@
 import ExecuteQuery from 'src/utils/db'
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import { PermanentRoles } from 'src/context/types'
-import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
 // Map day names to numbers (0-6)
 const dayToNumber: Record<string, number> = {
@@ -22,14 +20,14 @@ type Schedule = {
 
 const parseTimeString = (timeStr: string) => {
   const [hours, minutes] = timeStr.split(':')
-
-  return {
+  
+return {
     hours: parseInt(hours, 10),
     minutes: parseInt(minutes, 10)
   }
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PUT') {
     return res.status(405).json({ message: 'Method not allowed' })
   }
@@ -40,24 +38,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const schedules: Schedule[] = req.body
 
     if (schedules && schedules.length > 0) {
-      for (const schedule of schedules) {
-        const dayNumber = dayToNumber[schedule.day]
-        const { hours: startHour, minutes: startMinutes } = parseTimeString(schedule.startTime)
-        const { hours: endHour, minutes: endMinutes } = parseTimeString(schedule.endTime)
+      const values = schedules
+        .map(schedule => {
+          const dayNumber = dayToNumber[schedule.day]
+          const { hours: startHour, minutes: startMinutes } = parseTimeString(schedule.startTime)
+          const { hours: endHour, minutes: endMinutes } = parseTimeString(schedule.endTime)
 
-        const insertQuery = `
-          INSERT INTO portal_schedule (day_of_week, start_hour, start_minutes, end_hour, end_minutes)
-          VALUES (@dayNumber, @startHour, @startMinutes, @endHour, @endMinutes)
-        `
-
-        await ExecuteQuery(insertQuery, {
-          dayNumber,
-          startHour,
-          startMinutes,
-          endHour,
-          endMinutes
+          return `(${dayNumber}, ${startHour}, ${startMinutes}, ${endHour}, ${endMinutes})`
         })
-      }
+        .join(',')
+
+      const insertQuery = `
+        INSERT INTO portal_schedule (day_of_week, start_hour, start_minutes, end_hour, end_minutes)
+        VALUES ${values}
+      `
+
+      await ExecuteQuery(insertQuery)
     }
 
     await fetch(`${process.env.NEXT_PUBLIC_URL}/api/cron/setup`)
@@ -68,5 +64,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(500).json({ message: 'Internal server error' })
   }
 }
-
-export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

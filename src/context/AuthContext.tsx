@@ -25,7 +25,7 @@ import toast from 'react-hot-toast'
 import { PortalSettingNames } from 'src/@core/context/settingsContext'
 
 // ** Defaults
-const unprotectedRoutes: string[] = ['/forgot-password', '/recovery-password']
+const unprotectedRoutes: string[] = []
 
 const defaultProvider: AuthValuesType = {
   user: null,
@@ -251,8 +251,6 @@ const AuthProvider = ({ children }: Props) => {
           setLoading(false)
         }
       }
-
-      setLoading(false)
     }
 
     initAuth()

@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import { getPortalSettingFromDB } from '../../db_transactions/portal_settings/get'
 import { PortalSettingNames } from 'src/@core/context/settingsContext'
-import { withAuth } from 'src/pages/api/middleware/authMiddleware'
 
 interface EmailRequest {
   to: string | string[]
@@ -9,7 +8,7 @@ interface EmailRequest {
   html: string
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -78,5 +77,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     })
   }
 }
-
-export default withAuth(handler)

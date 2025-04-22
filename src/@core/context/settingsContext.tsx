@@ -49,7 +49,6 @@ export type CustomBranding = {
   powerbi_dark_theme?: string
   login_page_image?: string
   registration_page_image?: string
-  forgot_password_page_image?: string
 }
 
 export type AppBranding = CustomBranding & {
@@ -249,7 +248,6 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
   )
   const [initialCapacitySchedules, setInitialCapacitySchedules] = useState<any[]>([])
   const [capacitySchedules, setCapacitySchedules] = useState<any[]>([])
-  const [fullSettingsLoaded, setFullSettingsLoaded] = useState(false)
   const appPortalSettings: AppPortalSettings = useMemo(() => {
     return portalSettings.reduce(
       (acc, item: PortalSetting) => {
@@ -488,35 +486,10 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
   const getPortalSettings: PortalSettingsContextValue['getPortalSettings'] = async () => {
     setLoadingPortalSettings(true)
     try {
-      // Determine which endpoint to use based on authentication status
-      const endpoint =
-        user?.id && !fullSettingsLoaded
-          ? '/api/db_transactions/portal_settings/get/all'
-          : '/api/db_transactions/portal_settings/get/basic'
-
-      const response = await axios.get(endpoint)
+      const response = await axios.get('/api/db_transactions/portal_settings/get/all')
       const settingsObj = response?.data
 
-      setPortalSettings(prevSettings => {
-        // If we're loading full settings, we want to replace everything
-        // If we're loading basic settings, we want to merge with any existing settings
-        if (user?.id && !fullSettingsLoaded) {
-          setFullSettingsLoaded(true)
-          
-return settingsObj
-        } else {
-          // Create a map of existing settings by ID for quick lookup
-          const existingSettingsMap = new Map(prevSettings.map(setting => [setting.id, setting]))
-
-          // Update or add new settings
-          settingsObj.forEach((setting: PortalSetting) => {
-            existingSettingsMap.set(setting.id, setting)
-          })
-
-          return Array.from(existingSettingsMap.values())
-        }
-      })
-
+      setPortalSettings(response?.data)
       setAppPortalSettingsLoaded(true)
 
       return settingsObj
@@ -576,12 +549,8 @@ return settingsObj
   }
 
   useEffect(() => {
-    if (user?.id && !fullSettingsLoaded) {
-      getPortalSettings()
-    } else if (!user?.id) {
-      getPortalSettings()
-    }
-  }, [user?.id, fullSettingsLoaded])
+    getPortalSettings()
+  }, [])
 
   useEffect(() => {
     const restoredSettings = restoreSettings()

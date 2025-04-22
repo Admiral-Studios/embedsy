@@ -39,11 +39,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<{ urls?: string
 
       const urls = await Promise.all(
         fileArray.map(async (file: any) => {
-          const filenameParts = file.originalFilename?.split('.')
-          const originalFilename = filenameParts[0]
-          const fileExtension = filenameParts.length > 1 ? `.${filenameParts.pop()}` : ''
+          const originalFilename = file.originalFilename?.split('.')[0]
           const uniqueTimestamp = new Date().getTime()
-          const blobName = `${folder}/${originalFilename}-${uniqueTimestamp}${fileExtension}`
+          const blobName = `${folder}/${originalFilename}-${uniqueTimestamp}`
           const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
           const buffer = await fs.promises.readFile(file.filepath)

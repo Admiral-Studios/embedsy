@@ -1,0 +1,180 @@
+import {
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
+} from '@mui/material'
+import axios from 'axios'
+import { Fragment, useEffect, useRef, useState } from 'react'
+import { NangoSync } from 'src/context/types'
+import Paper from '@mui/material/Paper'
+import toast from 'react-hot-toast'
+
+type Props = {
+  handleClose: () => void
+  integration: string | null
+  connectionId: string | undefined
+}
+
+const SyncsSettingsModal = ({ integration, handleClose, connectionId }: Props) => {
+  const [loading, setLoading] = useState(false)
+  const [syncs, setSyncs] = useState<NangoSync[]>([])
+  const initialSyncsRef = useRef<any[]>([])
+
+  const handleSave = async () => {
+    if (JSON.stringify(initialSyncsRef.current) === JSON.stringify(syncs)) {
+      handleClose()
+
+      return
+    }
+
+    try {
+      setLoading(true)
+      const resp = await axios.post('/api/nango/syncs/update', {
+        syncs: syncs.filter((s, i) => s.status !== initialSyncsRef.current[i].status)
+      })
+
+      if (resp.data.ok) {
+        toast.success(resp.data.message)
+        initialSyncsRef.current = [...syncs]
+      } else {
+        toast.error('Failed to save syncs')
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+      handleClose()
+    }
+  }
+
+  const handleSwitch = (sync: NangoSync) => {
+    const newSyncs = syncs.map(s => {
+      if (s.id === sync.id) {
+        return { ...s, status: sync.status === 'SUCCESS' ? 'PAUSED' : 'SUCCESS' }
+      }
+
+      return s
+    })
+    setSyncs(newSyncs)
+  }
+
+  console.log(integration)
+
+  const getSyncs = async () => {
+    try {
+      setLoading(true)
+      const resp = await axios.get(`/api/nango/syncs/get?provider=${integration}&connectionId=${connectionId}`)
+      setSyncs(resp.data.syncs)
+
+      if (initialSyncsRef.current.length === 0) {
+        initialSyncsRef.current = [...resp.data.syncs]
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getScripts = async () => {
+    try {
+      const scripts = await axios.get('api/nango/integrations/scripts')
+
+      console.log(scripts)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    if (integration && connectionId) {
+      getSyncs()
+      getScripts()
+    }
+  }, [integration])
+
+  const closeModal = () => {
+    handleClose()
+    setSyncs([])
+  }
+
+  return (
+    <Dialog open={!!integration} onClose={closeModal} maxWidth={'md'} sx={{ overflow: 'hidden' }}>
+      <DialogTitle id='alert-dialog-title'>Syncs settings</DialogTitle>
+
+      <DialogContent sx={{ gap: '10px', display: 'flex', flexDirection: 'column', minWidth: '800px' }}>
+        {loading ? (
+          <DialogContentText
+            sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '180px' }}
+          >
+            <CircularProgress size={35} />
+          </DialogContentText>
+        ) : (
+          <>
+            <TableContainer component={Paper}>
+              <Table sx={{ width: '800px' }} size='small'>
+                <TableHead>
+                  <TableRow>
+                    <TableCell align='left' width={150}>
+                      Sync Name
+                    </TableCell>
+
+                    <TableCell align='left' width={200}>
+                      Status
+                    </TableCell>
+
+                    <TableCell align='left' width={150}>
+                      Frequency
+                    </TableCell>
+
+                    <TableCell align='left' width={200}>
+                      Last Sync Start
+                    </TableCell>
+
+                    <TableCell align='left' width={100}></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {syncs.map(sync => (
+                    <TableRow key={sync.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                      <TableCell component='th' scope='row'>
+                        {sync.name}
+                      </TableCell>
+                      <TableCell align='left'>{sync.status}</TableCell>
+                      <TableCell align='left'>{sync.frequency}</TableCell>
+                      <TableCell align='left'>{new Date(sync.finishedAt).toLocaleString()}</TableCell>
+
+                      <TableCell align='right'>
+                        <Switch checked={sync.status === 'SUCCESS'} onChange={() => handleSwitch(sync)} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </>
+        )}
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={closeModal}>Close</Button>
+        <Button onClick={handleSave} autoFocus>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+export default SyncsSettingsModal

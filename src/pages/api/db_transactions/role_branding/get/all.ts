@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
-import { PermanentRoles } from 'src/context/types'
-import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const query = `
                 SELECT rb.*, r.role 
@@ -23,5 +21,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(500).json({ message: 'Failed to retrieve role branding data', error: error.message })
   }
 }
-
-export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

@@ -1,13 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
-import jwt, { JwtPayload } from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 
 import ExecuteQuery from 'src/utils/db'
 import axios from 'axios'
-import { serializeCookie } from 'src/utils/cookies'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   try {
-    let id: number | undefined
+    let id
 
     const jwtSecret = process.env.NEXT_PUBLIC_JWT_SECRET
 
@@ -15,53 +14,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('JWT_SECRET is not defined in the environment variables.')
     }
 
-    const accessToken = req.cookies.accessToken
-    const refreshToken = req.cookies.refreshToken
+    const token = req.cookies.refreshToken
 
-    if (!accessToken && !refreshToken) {
+    if (!token) {
       return res.status(204).json({})
     }
 
-    if (accessToken) {
-      try {
-        const decoded = jwt.verify(accessToken, jwtSecret) as JwtPayload
-        id = typeof decoded.id === 'number' ? decoded.id : parseInt(decoded.id, 10)
-      } catch (error) {
-        if (!refreshToken) {
-          return res.status(204).json({})
-        }
+    jwt.verify(token, jwtSecret, function (err: any, decoded: any) {
+      if (err) {
+        return res.status(401).json({ auth: false, message: 'Failed to authenticate token' })
       }
-    }
+      id = decoded.id
+    })
 
-    if (!id && refreshToken) {
-      try {
-        const decoded = jwt.verify(refreshToken, jwtSecret) as JwtPayload
-        id = typeof decoded.id === 'number' ? decoded.id : parseInt(decoded.id, 10)
+    const query = `SELECT TOP 1 * FROM users WHERE id='${id}'`
 
-        if (id) {
-          const newAccessToken = jwt.sign({ id }, jwtSecret, { expiresIn: '15m' })
-
-          const accessCookie = serializeCookie('accessToken', newAccessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 900000,
-            path: '/'
-          })
-
-          res.setHeader('Set-Cookie', accessCookie)
-        }
-      } catch (error) {
-        return res.status(204).json({})
-      }
-    }
-
-    if (!id) {
-      return res.status(204).json({})
-    }
-
-    const query = `SELECT TOP 1 * FROM users WHERE id=@id`
-
-    const findUser = await ExecuteQuery(query, { id })
+    const findUser = await ExecuteQuery(query)
 
     const viewAsCustomRole = req.cookies.viewAsCustomRole
 
@@ -98,7 +66,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     })
   } catch (error) {
-    console.error('Error in /api/auth/me:', error)
     res.status(500).json({ message: 'Internal server error' })
   }
 }

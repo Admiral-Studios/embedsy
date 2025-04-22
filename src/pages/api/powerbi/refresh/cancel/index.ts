@@ -20,11 +20,11 @@ export default async function handler(request: NextApiRequest, response: NextApi
   const checkStatusQuery = `
     SELECT last_refresh_status, last_refresh_date
     FROM datasets
-    WHERE dataset_id = @datasetId
+    WHERE dataset_id = '${datasetId}'
   `
 
   try {
-    const [result] = await ExecuteQuery(checkStatusQuery, { datasetId })
+    const [result] = await ExecuteQuery(checkStatusQuery)
     if (result && result.length > 0) {
       const { last_refresh_status, last_refresh_date } = result[0]
       if (last_refresh_status !== 'unknown') {
@@ -70,8 +70,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
           last_refresh_date: latestRefresh.startTime
         })
       }
-
-      return response.status(200).json({ message: 'No in-progress refresh found and no refresh history available' })
+      
+return response.status(200).json({ message: 'No in-progress refresh found and no refresh history available' })
     }
 
     const refreshId = inProgressRefresh.requestId
@@ -106,16 +106,16 @@ export default async function handler(request: NextApiRequest, response: NextApi
       }
     } else {
       console.error('Unexpected response:', cancelResponse.status, cancelResponse.data)
-
-      return response.status(cancelResponse.status).json({
+      
+return response.status(cancelResponse.status).json({
         error: 'Unexpected response from Power BI API',
         details: cancelResponse.data
       })
     }
   } catch (error: any) {
     console.error('Error cancelling refresh:', error.response?.data || error.message)
-
-    return response.status(error.response?.status || 500).json({
+    
+return response.status(error.response?.status || 500).json({
       error: 'Failed to cancel refresh',
       details: error.response?.data || error.message
     })

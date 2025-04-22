@@ -15,9 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: string
     }
 
-    const query = `SELECT TOP 1 * FROM users WHERE email=@email`
+    const query = `SELECT TOP 1 * FROM users WHERE email='${email}'`
 
-    const findUser = await ExecuteQuery(query, { email })
+    const findUser = await ExecuteQuery(query)
 
     const password_hash = bcrypt.hashSync(password, 8)
 
@@ -27,29 +27,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const currentDate = new Date().toISOString().replace('T', ' ').replace('Z', '')
 
-    const querySave = `INSERT INTO Users (user_name, email, password_hash, company, name, title, is_verified, created_at, updated_at) 
-                      VALUES (@user_name, @email, @password_hash, @company, @name, @title, @is_verified, @created_at, @updated_at);`
+    const querySave = `INSERT INTO Users (user_name, email, password_hash, company, name, title, is_verified, created_at, updated_at) VALUES ('${user_name}', '${email}', '${password_hash}', '${company}', '${name}', '${title}', '${true}', '${currentDate}', '${currentDate}');`
+    await ExecuteQuery(querySave)
 
-    await ExecuteQuery(querySave, {
-      user_name,
-      email,
-      password_hash,
-      company,
-      name,
-      title,
-      is_verified: true,
-      created_at: currentDate,
-      updated_at: currentDate
-    })
-
-    const checkExistingRoleQuery = `SELECT TOP 1 * FROM user_roles WHERE email=@email`
-    const existingRoleResult = await ExecuteQuery(checkExistingRoleQuery, { email })
+    const checkExistingRoleQuery = `SELECT TOP 1 * FROM user_roles WHERE email='${email}'`
+    const existingRoleResult = await ExecuteQuery(checkExistingRoleQuery)
 
     if (!existingRoleResult[0]?.length) {
-      const getGuestRoleQuery = `SELECT TOP 1 id FROM roles WHERE role = @role`
-      const guestRoleResult = await ExecuteQuery(getGuestRoleQuery, {
-        role: PermanentRoles.guest
-      })
+      const getGuestRoleQuery = `SELECT TOP 1 id FROM roles WHERE role = '${PermanentRoles.guest}'`
+      const guestRoleResult = await ExecuteQuery(getGuestRoleQuery)
 
       if (!guestRoleResult[0]?.length) {
         return res.status(404).json({ message: 'Guest role not found' })
@@ -57,11 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const guestRoleId = guestRoleResult[0][0].id
 
-      const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES (@email, @role_id);`
-      await ExecuteQuery(assignRoleQuery, {
-        email,
-        role_id: guestRoleId
-      })
+      const assignRoleQuery = `INSERT INTO user_roles (email, role_id) VALUES ('${email}', ${guestRoleId});`
+      await ExecuteQuery(assignRoleQuery)
     }
 
     res.status(200).json({})

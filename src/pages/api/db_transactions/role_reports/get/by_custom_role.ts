@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
-import { withAuth } from 'src/pages/api/middleware/authMiddleware'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' })
   }
@@ -18,9 +17,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       SELECT rr.report_id
       FROM roles r
       JOIN role_reports rr ON r.id = rr.role_id
-      WHERE r.id = @roleId;`
+      WHERE r.id = ${roleId};`
 
-    const roleQueryResult = await ExecuteQuery(getRoleQuery, { roleId })
+    const roleQueryResult = await ExecuteQuery(getRoleQuery)
 
     if (roleQueryResult.length > 0) {
       const reportIds = roleQueryResult[0].map((row: any) => row.report_id)
@@ -33,5 +32,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(500).json({ message: 'Internal server error' })
   }
 }
-
-export default withAuth(handler)

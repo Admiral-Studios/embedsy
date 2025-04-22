@@ -202,6 +202,14 @@ const UserDropdown = (props: Props) => {
                 </Box>
               </MenuItemStyled>
             </Link>
+            <Link href='/integrations'>
+              <MenuItemStyled sx={{ p: 0 }} onClick={() => handleDropdownClose()}>
+                <Box sx={styles}>
+                  <Icon icon='lucide:user-cog' />
+                  Integrations
+                </Box>
+              </MenuItemStyled>
+            </Link>
             {hasAdminPrivileges && (
               <>
                 <Link href='/roles-configuration'>

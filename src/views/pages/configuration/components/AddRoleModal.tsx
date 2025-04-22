@@ -28,7 +28,6 @@ type Props = {
 
 const AddRoleModal = ({ open, onClose, handleProcessed, roleToUpdate, allUsersEmails }: Props) => {
   const isAdd = !roleToUpdate?.id
-  const isGuestRole = roleToUpdate?.role === PermanentRoles.guest
 
   const [value, setValue] = useState('')
   const [errMsg, setErrMsg] = useState('')
@@ -75,21 +74,16 @@ const AddRoleModal = ({ open, onClose, handleProcessed, roleToUpdate, allUsersEm
     )
 
     if (result === 'error') {
-      setIsLoading(false)
-      
-return
+      setErrMsg('Role already exist')
+    } else {
+      handleClose()
     }
 
-    handleClose()
     setIsLoading(false)
   }
 
   const addUsers = async (values: string[]) => {
-    setUsers(prevUsers => {
-      const combinedUsers = [...prevUsers, ...values]
-      
-return [...new Set(combinedUsers)]
-    })
+    setUsers(values)
   }
 
   const handleCreatePageToAdd = () => {
@@ -245,21 +239,14 @@ return [...new Set(combinedUsers)]
                 key={user}
                 size='medium'
                 label={user}
-                onDelete={!isGuestRole ? () => setUsers(users.filter(u => u !== user)) : undefined}
+                onDelete={() => setUsers(users.filter(u => u !== user))}
                 color='primary'
               />
             ))}
 
-            {!isGuestRole && (
-              <Button
-                variant='outlined'
-                size='small'
-                onClick={() => setOpenAddUserModal(true)}
-                sx={{ borderRadius: 4 }}
-              >
-                Assign Users +
-              </Button>
-            )}
+            <Button variant='outlined' size='small' onClick={() => setOpenAddUserModal(true)} sx={{ borderRadius: 4 }}>
+              Assign Users +
+            </Button>
           </Box>
           <Box sx={{ mt: 4, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
             {pages.map(p => (

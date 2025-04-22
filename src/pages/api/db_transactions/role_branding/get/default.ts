@@ -4,8 +4,8 @@ import ExecuteQuery from 'src/utils/db'
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ message: 'Method Not Allowed' })
-
-    return
+    
+return
   }
 
   try {
@@ -16,8 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (adminRoleResult[0]?.length === 0) {
       res.status(404).json({ message: 'Admin role not found' })
-
-      return
+      
+return
     }
 
     const adminRoleId = adminRoleResult[0][0].id
@@ -26,9 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       SELECT rb.*, r.role
       FROM role_branding rb
       INNER JOIN roles r ON rb.role_id = r.id
-      WHERE rb.role_id = @adminRoleId;
+      WHERE rb.role_id = ${adminRoleId};
     `
-    const roleBrandingResult = await ExecuteQuery(roleBrandingQuery, { adminRoleId })
+    const roleBrandingResult = await ExecuteQuery(roleBrandingQuery)
 
     if (roleBrandingResult[0]?.length > 0) {
       res.status(200).json(roleBrandingResult[0][0])

@@ -23,7 +23,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
     )
 
     if (!reportDataResponse.ok) {
-      return response.status(200).json({})
+      throw new Error(`Failed to fetch report data: ${reportDataResponse.statusText}`)
     }
 
     const reportData = await reportDataResponse.json()

@@ -3,10 +3,8 @@ import { NextApiRequest, NextApiResponse } from 'next/types'
 import { PageTypesEnum } from 'src/enums/pageTypes'
 import ExecuteQuery, { dbConfig } from 'src/utils/db'
 import axios from 'axios'
-import { PermanentRoles } from 'src/context/types'
-import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const {
       roleId,
@@ -27,30 +25,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const pool: ConnectionPool = await sql.connect(dbConfig)
       const request: Request = pool.request()
 
-      request.input('roleId', roleId)
-      request.input('reportId', reportId)
       const checkExistingQuery = `
         SELECT id FROM role_reports 
-        WHERE role_id = @roleId AND report_id = @reportId
+        WHERE role_id = ${roleId} AND report_id = '${reportId}'
       `
       const existingResult = await request.query(checkExistingQuery)
       if (existingResult.recordset.length > 0) {
         return res.status(400).json({ message: 'One of the roles is already assigned to that report' })
       }
 
-      request.input('workspaceId', workspaceId)
-      request.input('workspace', workspace)
-      request.input('report', report)
-      request.input('datasetId', datasetId || '')
-      request.input('isEffectiveIdentityRequired', isEffectiveIdentityRequired || 0)
-      request.input('rowLevelRole', rowLevelRole || '')
-      request.input('previewReportPages', previewReportPages)
-      request.input('type', type)
-
       const insertQuery = `INSERT INTO role_reports (role_id, workspace_id, workspace, report_id, report,
       dataset_id, is_effective_identity_required, row_level_role, preview_pages, type)
-      VALUES (@roleId, @workspaceId, @workspace, @reportId, @report,
-      @datasetId, @isEffectiveIdentityRequired, @rowLevelRole, @previewReportPages, @type); SELECT SCOPE_IDENTITY() AS id;`
+      VALUES (${roleId}, '${workspaceId}', '${workspace}', '${reportId}', '${report}',
+      '${datasetId}', '${isEffectiveIdentityRequired || 0}', '${
+        rowLevelRole || ''
+      }', '${previewReportPages}', '${type}'); SELECT SCOPE_IDENTITY() AS id;`
 
       const insertResult = await request.query(insertQuery)
 
@@ -64,11 +53,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const checkDatasetQuery = `
         SELECT last_refresh_status, last_refresh_date
         FROM datasets
-        WHERE dataset_id = @datasetId
+        WHERE dataset_id = '${datasetId}'
       `
 
       try {
-        const [result] = await ExecuteQuery(checkDatasetQuery, { datasetId })
+        const [result] = await ExecuteQuery(checkDatasetQuery)
         if (result && result.length > 0) {
           const { last_refresh_status, last_refresh_date } = result[0]
           res.status(200).json({
@@ -99,5 +88,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(405).json({ message: 'Method Not Allowed' })
   }
 }
-
-export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

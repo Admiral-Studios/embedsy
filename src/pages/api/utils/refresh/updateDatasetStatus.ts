@@ -9,30 +9,29 @@ export async function updateDatasetStatus(
   const checkExistenceQuery = `
       SELECT COUNT(*) as count
       FROM datasets
-      WHERE dataset_id = @datasetId
+      WHERE dataset_id = '${datasetId}'
     `
 
   try {
-    const [result] = await ExecuteQuery(checkExistenceQuery, { datasetId })
+    const [result] = await ExecuteQuery(checkExistenceQuery)
     const exists = result[0].count > 0
 
     let query
     if (exists) {
       query = `
           UPDATE datasets
-          SET last_refresh_date = @lastRefreshDate,
-              last_refresh_status = @status
-          WHERE dataset_id = @datasetId
+          SET last_refresh_date = '${lastRefreshDate}',
+              last_refresh_status = '${status}'
+          WHERE dataset_id = '${datasetId}'
         `
-      await ExecuteQuery(query, { lastRefreshDate, status, datasetId })
     } else {
       query = `
           INSERT INTO datasets (dataset_id, last_refresh_date, last_refresh_status)
-          VALUES (@datasetId, @lastRefreshDate, @status)
+          VALUES ('${datasetId}', '${lastRefreshDate}', '${status}')
         `
-      await ExecuteQuery(query, { datasetId, lastRefreshDate, status })
     }
 
+    await ExecuteQuery(query)
     console.log(
       `Refresh for workspace: ${workspaceId}, dataset: ${datasetId} was: ${status}. ${
         exists ? 'Updated' : 'Added new'

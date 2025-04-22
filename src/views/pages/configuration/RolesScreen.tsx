@@ -88,12 +88,7 @@ const RolesScreen = () => {
 
   const handleAssignUsers = async (emails: string[]) => {
     if (roleToAssignUser?.id) {
-      const results = await Promise.all(emails.map(email => assignUserToRole(roleToAssignUser.id, email)))
-      const success = results.every(r => r.success)
-
-      if (success) {
-        setRoleToAssignUser(null)
-      }
+      await Promise.all(emails.map(email => assignUserToRole(roleToAssignUser?.id, email)))
     }
   }
 
@@ -233,135 +228,132 @@ const RolesScreen = () => {
     </Grid>
   )
 
+  if (!allRolesData.length)
+    return (
+      <>
+        {renderControls}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
+          <Typography variant='h6'>There are no roles available.</Typography>
+        </Box>
+      </>
+    )
+
   return (
     <>
       <ItemList controls={renderControls}>
-        {allRolesData.length > 0 ? (
-          <>
-            {searchedRoles.slice(0, visibleRoles).map(role => (
-              <ItemCard
-                key={role.id}
-                checked={selectedIds.includes(role?.id)}
-                onSelect={handleSelect}
-                id={role?.id}
-                title={
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    {Object.values(PermanentRoles).includes(role.role as PermanentRoles) && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', pl: 2, pr: 6 }}>
-                        <Tooltip title='This is a default portal role. It cannot be renamed or deleted.'>
-                          <IconButton>
-                            <Icon icon='tabler:info-circle' fontSize={20} />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    )}
-                    <span>{role?.role}</span>
+        {searchedRoles.slice(0, visibleRoles).map(role => (
+          <ItemCard
+            key={role.id}
+            checked={selectedIds.includes(role?.id)}
+            onSelect={handleSelect}
+            id={role?.id}
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {Object.values(PermanentRoles).includes(role.role as PermanentRoles) && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', pl: 2, pr: 6 }}>
+                    <Tooltip title='This is a default portal role. It cannot be renamed or deleted.'>
+                      <IconButton>
+                        <Icon icon='tabler:info-circle' fontSize={20} />
+                      </IconButton>
+                    </Tooltip>
                   </Box>
-                }
-                density={density}
-                showCheckbox={!Object.values(PermanentRoles).includes(role.role as PermanentRoles)}
-                topControls={
-                  <>
-                    <Button variant='outlined' onClick={() => clickEditButton(role)}>
-                      Edit Role
-                    </Button>
+                )}
+                <span>{role?.role}</span>
+              </Box>
+            }
+            density={density}
+            showCheckbox={!Object.values(PermanentRoles).includes(role.role as PermanentRoles)}
+            topControls={
+              <>
+                <Button variant='outlined' onClick={() => clickEditButton(role)}>
+                  Edit Role
+                </Button>
 
-                    {!Object.values(PermanentRoles).includes(role.role as PermanentRoles) && (
-                      <Button variant='outlined' color='error' onClick={() => setRoleIdToDelete(role.id)}>
-                        Delete Role
-                      </Button>
-                    )}
-                  </>
-                }
-              >
-                <Box sx={{ mt: 4, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
-                  {(loadedUsersRolesIds.has(role.id) ? role?.users : role.users.slice(0, 10))?.map(user => (
-                    <ChipItem
-                      variant='outlined'
-                      key={user.id}
-                      size='medium'
-                      label={user.email}
-                      onDelete={role.role !== PermanentRoles.guest ? async () => setUserIdToDelete(user.id) : undefined}
-                      color='primary'
-                    />
-                  ))}
-
-                  {role.users?.length > 10 && (
-                    <Button
-                      variant='contained'
-                      sx={{ borderRadius: 4 }}
-                      size='small'
-                      onClick={() => toggleRoleId(role.id)}
-                    >
-                      {loadedUsersRolesIds.has(role.id) ? 'Hide' : 'Show More'}
-                    </Button>
-                  )}
-
-                  {role.role !== PermanentRoles.guest && (
-                    <Button
-                      variant='outlined'
-                      size='small'
-                      onClick={() => handleAssignUsersClick(role)}
-                      sx={{ borderRadius: 4 }}
-                    >
-                      Assign Users +
-                    </Button>
-                  )}
-                </Box>
-
-                <Box sx={{ mt: 8, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
-                  {role?.pages.map(p => (
-                    <ChipItem
-                      key={p.id}
-                      size='medium'
-                      label={
-                        p.type === PageTypesEnum.Iframe
-                          ? p.iframe_title
-                          : p.type === PageTypesEnum.Hyperlink
-                          ? p.hyperlink_title
-                          : p.report
-                      }
-                      color={
-                        p.type === PageTypesEnum.Iframe
-                          ? 'info'
-                          : p.type === PageTypesEnum.Hyperlink
-                          ? 'warning'
-                          : 'primary'
-                      }
-                      onDelete={() => {
-                        setPageToDelete({
-                          id: p.id,
-                          name:
-                            p.type === PageTypesEnum.Iframe
-                              ? p.iframe_title || ''
-                              : p.type === PageTypesEnum.Hyperlink
-                              ? p.hyperlink_title || ''
-                              : p.report || ''
-                        })
-                      }}
-                    />
-                  ))}
-
-                  <Button
-                    variant='outlined'
-                    size='small'
-                    sx={{ borderRadius: 4 }}
-                    onClick={() => handleAddPage(role.role, role.id)}
-                  >
-                    Add Page +
+                {!Object.values(PermanentRoles).includes(role.role as PermanentRoles) && (
+                  <Button variant='outlined' color='error' onClick={() => setRoleIdToDelete(role.id)}>
+                    Delete Role
                   </Button>
-                </Box>
-              </ItemCard>
-            ))}
-          </>
-        ) : (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
-            <Typography variant='h6'>There are no roles available.</Typography>
-          </Box>
-        )}
+                )}
+              </>
+            }
+          >
+            <Box sx={{ mt: 4, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
+              {(loadedUsersRolesIds.has(role.id) ? role?.users : role.users.slice(0, 10))?.map(user => (
+                <ChipItem
+                  variant='outlined'
+                  key={user.id}
+                  size='medium'
+                  label={user.email}
+                  onDelete={role.role !== PermanentRoles.guest ? async () => setUserIdToDelete(user.id) : undefined}
+                  color='primary'
+                />
+              ))}
+
+              {role.users?.length > 10 && (
+                <Button variant='contained' sx={{ borderRadius: 4 }} size='small' onClick={() => toggleRoleId(role.id)}>
+                  {loadedUsersRolesIds.has(role.id) ? 'Hide' : 'Show More'}
+                </Button>
+              )}
+
+              {role.role !== PermanentRoles.guest && (
+                <Button
+                  variant='outlined'
+                  size='small'
+                  onClick={() => handleAssignUsersClick(role)}
+                  sx={{ borderRadius: 4 }}
+                >
+                  Assign Users +
+                </Button>
+              )}
+            </Box>
+
+            <Box sx={{ mt: 8, display: 'flex', gap: 2, alignContent: 'center', flexWrap: 'wrap' }}>
+              {role?.pages.map(p => (
+                <ChipItem
+                  key={p.id}
+                  size='medium'
+                  label={
+                    p.type === PageTypesEnum.Iframe
+                      ? p.iframe_title
+                      : p.type === PageTypesEnum.Hyperlink
+                      ? p.hyperlink_title
+                      : p.report
+                  }
+                  color={
+                    p.type === PageTypesEnum.Iframe
+                      ? 'info'
+                      : p.type === PageTypesEnum.Hyperlink
+                      ? 'warning'
+                      : 'primary'
+                  }
+                  onDelete={() => {
+                    setPageToDelete({
+                      id: p.id,
+                      name:
+                        p.type === PageTypesEnum.Iframe
+                          ? p.iframe_title || ''
+                          : p.type === PageTypesEnum.Hyperlink
+                          ? p.hyperlink_title || ''
+                          : p.report || ''
+                    })
+                  }}
+                />
+              ))}
+
+              <Button
+                variant='outlined'
+                size='small'
+                sx={{ borderRadius: 4 }}
+                onClick={() => handleAddPage(role.role, role.id)}
+              >
+                Add Page +
+              </Button>
+            </Box>
+          </ItemCard>
+        ))}
       </ItemList>
 
-      {allRolesData.length > 0 && visibleRoles < searchedRoles.length && (
+      {visibleRoles < searchedRoles.length && (
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, mt: 6 }}>
           <Button variant='outlined' onClick={loadMore}>
             Load More
@@ -383,13 +375,7 @@ const RolesScreen = () => {
           }
         }}
         onHandleConfirm={removeHandler}
-        title={
-          roleIdToDelete
-            ? `Delete role ${allRolesData.find(r => r.id === roleIdToDelete)?.role}?`
-            : selectedIds.length === 1
-            ? `Delete role ${allRolesData.find(r => r.id === selectedIds[0])?.role}?`
-            : `Delete roles ${selectedIds.map(id => allRolesData.find(r => r.id === id)?.role).join(', ')}?`
-        }
+        title={selectedIds?.length <= 1 ? 'Delete role?' : 'Delete roles?'}
       />
 
       <ConfirmationDialog

@@ -15,8 +15,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         if (secret) {
           const decoded = jwt.verify(refreshToken, secret) as JwtPayload
 
-          const findUserQuery = `SELECT TOP 1 * FROM users WHERE id=@id`
-          const userExists = await ExecuteQuery(findUserQuery, { id: decoded.id })
+          const userExists = await ExecuteQuery(`SELECT TOP 1 * FROM users WHERE id='${decoded.id}'`)
 
           if (userExists[0][0].id === decoded.id) {
             const accessToken = jwt.sign({ id: decoded.id }, secret, { expiresIn: accessTokenExpiresIn })

@@ -129,15 +129,10 @@ const VerticalNavLink = ({
           onClick={e => {
             if (item.type === PageTypesEnum.Hyperlink) {
               e.preventDefault()
-              let url = item.path || ''
-              if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
-                url = 'https://' + url
-              }
-
               if (item.openInNewTab) {
-                window.open(url, '_blank')
+                window.open(item.path, '_blank')
               } else {
-                window.location.href = url
+                window.location.href = item.path || ''
               }
             }
             if (navVisible) {

@@ -2,10 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next/types'
 import axios from 'axios'
 import { preparePageRequestBody } from 'src/utils/configurationUtils'
 import { PageTypesEnum } from 'src/enums/pageTypes'
-import { PermanentRoles } from 'src/context/types'
-import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -76,5 +74,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(500).json({ error: 'Failed to sync reports' })
   }
 }
-
-export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

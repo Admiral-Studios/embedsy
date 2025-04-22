@@ -38,8 +38,8 @@ const signRefreshToken = (id: number): string => {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { email, password } = req.body as { email: string; password: string }
-  const query = `SELECT TOP 1 * FROM users WHERE email=@email`
-  const findUser = await ExecuteQuery(query, { email })
+  const query = `SELECT TOP 1 * FROM users WHERE email='${email}'`
+  const findUser = await ExecuteQuery(query)
 
   const viewAsCustomRole = req.cookies.viewAsCustomRole
 
@@ -86,14 +86,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const loginAt = new Date().toISOString().replace('T', ' ').replace('Z', '')
 
-  const loginSessionQuery = `INSERT INTO user_activity (user_id, login_at, session_duration) 
-                            VALUES (@userId, @loginAt, @sessionDuration);`
+  const loginSessionQuery = `INSERT INTO user_activity (user_id, login_at, session_duration) VALUES ('${
+    user.id
+  }', '${loginAt}', ${0});`
 
-  await ExecuteQuery(loginSessionQuery, {
-    userId: user.id,
-    loginAt,
-    sessionDuration: 0
-  })
+  await ExecuteQuery(loginSessionQuery)
 
   res.status(200).json({
     userData: {

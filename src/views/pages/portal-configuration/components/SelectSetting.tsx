@@ -13,10 +13,9 @@ export interface SelectSettingProps {
   name: string
   form: UseFormReturn<any>
   options: Array<{ label: string; value: string }>
-  clearable?: boolean
 }
 
-const SelectSetting = ({ label = '', options, name, form, clearable = true }: SelectSettingProps) => {
+const SelectSetting = ({ label = '', options, name, form }: SelectSettingProps) => {
   const {
     control,
     formState: { errors }
@@ -36,7 +35,6 @@ const SelectSetting = ({ label = '', options, name, form, clearable = true }: Se
       }}
       onBlur={field.onBlur}
       value={options?.find?.(option => option.value === field.value) || null}
-      disableClearable={!clearable}
       renderInput={params => (
         <CustomTextField
           label={label || settingToLabel(name)}

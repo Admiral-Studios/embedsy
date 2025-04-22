@@ -1,10 +1,8 @@
 import sql, { ConnectionPool, Request, VarChar } from 'mssql'
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import { dbConfig } from 'src/utils/db'
-import { PermanentRoles } from 'src/context/types'
-import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'PATCH') {
     const { id, roleId, iframe_title, iframe_html, type } = req.body
 
@@ -12,20 +10,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const pool: ConnectionPool = await sql.connect(dbConfig)
       const request: Request = pool.request()
 
-      request.input('id', id)
       const getExistingQuery = `
         SELECT iframe_title FROM role_reports 
-        WHERE id = @id
+        WHERE id = ${id}
       `
       const existingResult = await request.query(getExistingQuery)
       const existingIframe = existingResult.recordset[0]
 
       if (existingIframe?.iframe_title !== iframe_title) {
-        request.input('iframeTitle', VarChar, iframe_title)
-        request.input('id', id)
         const checkExistingQuery = `
           SELECT id FROM role_reports 
-          WHERE iframe_title = @iframeTitle AND id != @id
+          WHERE iframe_title = '${iframe_title}' AND id != ${id}
         `
         const duplicateResult = await request.query(checkExistingQuery)
 
@@ -35,16 +30,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
 
       request.input('iframe_html', VarChar, iframe_html)
-      request.input('iframe_title', VarChar, iframe_title || '')
-      request.input('roleId', roleId)
-      request.input('type', VarChar, type)
-      request.input('id', id)
 
-      const updateQuery = `UPDATE role_reports SET role_id = @roleId, workspace_id = '',
+      const updateQuery = `UPDATE role_reports SET role_id = '${roleId}', workspace_id = '',
       workspace = '', report_id = '', report = '',
       dataset_id = '', is_effective_identity_required = '0',
       row_level_role = '', preview_pages = '', iframe_html = @iframe_html,
-      iframe_title = @iframe_title, type = @type WHERE id = @id`
+      iframe_title = '${iframe_title || ''}', type = '${type}'  WHERE id = ${id}`
 
       await request.query(updateQuery)
 
@@ -63,5 +54,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(405).json({ message: 'Method Not Allowed' })
   }
 }
-
-export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

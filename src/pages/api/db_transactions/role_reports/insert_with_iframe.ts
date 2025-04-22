@@ -1,10 +1,8 @@
 import sql, { ConnectionPool, Request, VarChar } from 'mssql'
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import { dbConfig } from 'src/utils/db'
-import { PermanentRoles } from 'src/context/types'
-import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const { roleId, type, iframe_html, iframe_title, previewPages } = req.body
 
@@ -14,10 +12,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const pool: ConnectionPool = await sql.connect(dbConfig)
       const request: Request = pool.request()
 
-      request.input('iframeTitle', VarChar, iframe_title)
       const checkExistingQuery = `
         SELECT id, role_id, iframe_html FROM role_reports 
-        WHERE iframe_title = @iframeTitle
+        WHERE iframe_title = '${iframe_title}'
       `
       const existingResult = await request.query(checkExistingQuery)
 
@@ -35,20 +32,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         }
       }
 
-      request.input('roleId', roleId)
-      request.input('type', VarChar, type)
       request.input('iframe_html', VarChar, iframe_html || '')
-      request.input('iframe_title', VarChar, iframe_title)
-      request.input('previewReportPages', previewReportPages)
 
       const insertQuery = `INSERT INTO role_reports (role_id, workspace_id, workspace, report_id, report,
       dataset_id, is_effective_identity_required, row_level_role, preview_pages, type, iframe_html, iframe_title)
-      VALUES (@roleId, '', '', '', '',
-      '', '0', '', @previewReportPages, @type, @iframe_html, @iframe_title); SELECT SCOPE_IDENTITY() AS id;`
+      VALUES (${roleId}, '', '', '', '',
+      '', '0', '', '${previewReportPages}', '${type}', @iframe_html, '${iframe_title}'); SELECT SCOPE_IDENTITY() AS id;`
+
+      const insertResult = await request.query(insertQuery)
 
       try {
-        const insertResult = await request.query(insertQuery)
-
         res.status(200).json({
           ...req.body,
           id: insertResult.recordset[0].id
@@ -64,5 +57,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(405).json({ message: 'Method Not Allowed' })
   }
 }
-
-export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])

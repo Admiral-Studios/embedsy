@@ -107,17 +107,16 @@ const AddEditUserModal = ({ open, onClose, userToUpdate, handleProcessed }: Prop
             />
           ))}
 
-          {!roles.length && (
-            <Button
-              variant='outlined'
-              size='small'
-              sx={{ borderRadius: 4 }}
-              id='role-button'
-              onClick={handleOpenRoleMenu}
-            >
-              Add Role +
-            </Button>
-          )}
+          <Button
+            variant='outlined'
+            size='small'
+            sx={{ borderRadius: 4 }}
+            id='role-button'
+            onClick={handleOpenRoleMenu}
+            disabled={!!roles.length}
+          >
+            Add Role +
+          </Button>
 
           <Menu
             id='basic-role-menu'

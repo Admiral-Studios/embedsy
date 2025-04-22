@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next/types'
 import ExecuteQuery from 'src/utils/db'
-import { PermanentRoles } from 'src/context/types'
-import { withRole } from 'src/pages/api/middleware/authMiddleware'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'POST') {
     const { role_id } = req.body
 
@@ -16,13 +14,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
                         loading_spinner, loading_spinner_on_dark, loading_spinner_width, powerbi_light_theme, powerbi_dark_theme,
                         login_page_image, registration_page_image
                     ) VALUES (
-                        @roleId, 0, NULL, NULL, NULL, NULL,
+                        ${role_id}, 0, NULL, NULL, NULL, NULL,
                         NULL, NULL, NULL, NULL,
                         NULL, NULL, NULL, NULL, NULL, NULL, NULL
                     );
                 `
 
-        await ExecuteQuery(query, { roleId: role_id })
+        await ExecuteQuery(query)
         res.status(200).json({ message: 'Role branding inserted successfully' })
       } catch (error: any) {
         res.status(500).json({ message: 'Failed to insert role branding', error: error.message })
@@ -34,5 +32,3 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(405).json({ message: 'Method Not Allowed' })
   }
 }
-
-export default withRole(handler, [PermanentRoles.admin, PermanentRoles.super_admin])
