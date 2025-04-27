@@ -63,12 +63,18 @@ const schema = yup.object().shape({
   [PortalSettingNames.main_menu_name]: yup.string().required('Main menu name is required'),
   [PortalSettingNames.browser_tab_title]: yup.string().required('Browser tab title is required'),
   [PortalSettingNames.login_layout]: yup.string().required('Login layout is required'),
-  [PortalSettingNames.service_principal_client_id]: yup.string().required('Service principal client ID is required'),
+  [PortalSettingNames.service_principal_client_id]: yup.string(),
   [PortalSettingNames.auth_service_principal_client_id]: yup.string(),
   [PortalSettingNames.service_principal_expiry_date]: yup
     .date()
-    .required('Service principal expiry date is required')
-    .min(startOfToday(), 'Service principal expiry date must be today or a future date')
+    .when(PortalSettingNames.service_principal_client_id, {
+      is: (val: string) => val && val.length > 0,
+      then: () =>
+        yup
+          .date()
+          .required('Service principal expiry date is required when client ID is provided')
+          .min(startOfToday(), 'Service principal expiry date must be today or a future date')
+    })
     .transform((value, originalValue) => (originalValue ? parseISO(originalValue) : value)),
   [PortalSettingNames.landing_page_title]: yup.string(),
   [PortalSettingNames.landing_page_subtitle]: yup.string(),
@@ -109,9 +115,27 @@ const PortalConfiguration = () => {
 
   useEffect(() => {
     const getCapacities = async () => {
-      const response = await axios.get('/api/powerbi/capacity/get/all')
-      if (response.status === 200 && response.data.capacities.length) {
-        setCapacities(response.data.capacities)
+      try {
+        const response = await axios.get('/api/powerbi/capacity/get/all')
+        if (response.status === 200 && response.data.capacities.length) {
+          setCapacities(response.data.capacities)
+        }
+      } catch (error: any) {
+        if (error.response && error.response.status === 403) {
+          toast.error(
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {error.response.data}
+              <br />
+              <a
+                href='https://embedsy.io/documentation/installation/capacity_settings'
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                Click here for documentation.
+              </a>
+            </div>
+          )
+        }
       }
     }
 
@@ -267,6 +291,7 @@ const PortalConfiguration = () => {
                         label='Service Principal Client ID'
                         name={PortalSettingNames.service_principal_client_id}
                         form={form}
+                        required={false}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -276,6 +301,7 @@ const PortalConfiguration = () => {
                         type='password'
                         name={PortalSettingNames.service_principal_secret}
                         form={form}
+                        required={false}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -447,11 +473,17 @@ const PortalConfiguration = () => {
                             }
                           }}
                         >
-                          {capacities.map((capacity: any) => (
-                            <MenuItem key={capacity.name} value={capacity.name}>
-                              {`${capacity.name} (${capacity.type_label})`}
+                          {capacities.length > 0 ? (
+                            capacities.map((capacity: any) => (
+                              <MenuItem key={capacity.name} value={capacity.name}>
+                                {`${capacity.name} (${capacity.type_label})`}
+                              </MenuItem>
+                            ))
+                          ) : (
+                            <MenuItem disabled value='unknown'>
+                              There are no capacities available
                             </MenuItem>
-                          ))}
+                          )}
                         </Select>
                       </FormControl>
                       {form.watch(PortalSettingNames.power_bi_capacity_name) && (

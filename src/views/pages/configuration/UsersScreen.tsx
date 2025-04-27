@@ -18,8 +18,10 @@ import { PageTypesEnum } from 'src/enums/pageTypes'
 import { UsersContext } from 'src/context/UserConfiguration/UsersContext'
 import { RolesContext } from 'src/context/UserConfiguration/RolesContext'
 import { PermanentRoles } from 'src/context/types'
+import { UserConfigurationContext } from 'src/context/UserConfiguration/UserConfigurationSharedDataContext'
 
 const UsersScreen = () => {
+  const { loadingData } = useContext(UserConfigurationContext)
   const { removeUsers, addUpdateUser, locallyAddNewUsers, users, deleteUsersFromPortal } = useContext(UsersContext)
   const { removeRoles } = useContext(RolesContext)
 
@@ -102,61 +104,71 @@ const UsersScreen = () => {
     setOpenAddModal(true)
   }
 
-  if (!users.length)
+  if (loadingData)
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress />
       </Box>
     )
 
+  const renderControls = (
+    <Grid container spacing={8} mb={6} sx={{ alignItems: 'flex-end' }}>
+      <Grid item md={4} xs={12}>
+        <CustomTextField
+          label='Search By Email'
+          placeholder='Enter Search Term'
+          fullWidth
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
+      </Grid>
+
+      <Grid item md={8} xs={12}>
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 2
+          }}
+        >
+          <Button variant='contained' onClick={() => setIsUploadModalOpen(true)}>
+            Upload Users
+          </Button>
+
+          <Button variant='contained' onClick={() => setOpenAddModal(true)}>
+            Add User
+          </Button>
+
+          <Button
+            variant='contained'
+            color='error'
+            disabled={!selectedIds.length}
+            onClick={() => setOpenRemoveModal(true)}
+          >
+            Delete Users
+          </Button>
+
+          <DensityButtons density={density} onChangeDensity={d => setDensity(d)} />
+        </Box>
+      </Grid>
+    </Grid>
+  )
+
+  if (!users.length)
+    return (
+      <>
+        {renderControls}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
+          <Typography variant='h6'>There are no users available.</Typography>
+        </Box>
+      </>
+    )
+
   return (
     <>
-      <ItemList
-        controls={
-          <Grid container spacing={8} mb={6} sx={{ alignItems: 'flex-end' }}>
-            <Grid item md={4} xs={12}>
-              <CustomTextField
-                label='Search By Email'
-                placeholder='Enter Search Term'
-                fullWidth
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </Grid>
-
-            <Grid item md={8} xs={12}>
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  gap: 2
-                }}
-              >
-                <Button variant='contained' onClick={() => setIsUploadModalOpen(true)}>
-                  Upload Users
-                </Button>
-
-                <Button variant='contained' onClick={() => setOpenAddModal(true)}>
-                  Add User
-                </Button>
-
-                <Button
-                  variant='contained'
-                  color='error'
-                  disabled={!selectedIds.length}
-                  onClick={() => setOpenRemoveModal(true)}
-                >
-                  Delete Users
-                </Button>
-
-                <DensityButtons density={density} onChangeDensity={d => setDensity(d)} />
-              </Box>
-            </Grid>
-          </Grid>
-        }
-      >
+      <ItemList controls={renderControls}>
         {searchedUsers.slice(0, visibleUsers).map(user => (
           <ItemCard
             key={user.id}

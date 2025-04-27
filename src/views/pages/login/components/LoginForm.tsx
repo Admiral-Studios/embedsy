@@ -210,20 +210,7 @@ const LoginForm = () => {
               )}
             />
           </Box>
-          <Box
-            sx={{
-              mb: 1.75,
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}
-          >
-            <Typography component={LinkStyled} href='/forgot-password'>
-              Forgot Password?
-            </Typography>
-          </Box>
-          <LoginButton fullWidth type='submit' variant='contained' sx={{ mb: 4, mt: 2 }}>
+          <LoginButton fullWidth type='submit' variant='contained' sx={{ mb: 4 }}>
             Login
           </LoginButton>
           {appPortalSettings.landing_page_show_create_account && (

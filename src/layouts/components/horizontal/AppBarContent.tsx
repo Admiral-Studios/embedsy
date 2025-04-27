@@ -21,23 +21,24 @@ interface Props {
 }
 
 const Circle = styled('div')<{ color: string }>(({ color }) => ({
-  width: 8,
-  height: 8,
+  width: 20,
+  height: 20,
   borderRadius: '50%',
   backgroundColor: color
 }))
 
 const AppBarContent = (props: Props) => {
   const router = useRouter()
-  const { report } = useContext(ReportContext) || {}
+  const { settings, saveSettings } = props
+  const { fullscreen, iframeLoaded } = useContext(ReportContext) || {}
   const { canViewRoles } = useAdminRoles()
   const { powerBIEmbedCapacityActive, powerBICapacityExists } = useSettings()
   const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
-    
-return () => setIsMounted(false)
+
+    return () => setIsMounted(false)
   }, [])
 
   const circleColor = useMemo(() => {
@@ -48,21 +49,22 @@ return () => setIsMounted(false)
     }
   }, [powerBIEmbedCapacityActive])
 
-  // ** Props
-  const { settings, saveSettings } = props
-
   const isDashboardPath = router.pathname.startsWith('/dashboard')
-  const isLoaded = report?.iframeLoaded
+  const isLoaded = iframeLoaded
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      {isMounted && isDashboardPath && <ModeFullscreen disabled={!isLoaded} onClick={() => report?.fullscreen()} />}
-      {canViewRoles && powerBICapacityExists && (
-        <Tooltip title={powerBIEmbedCapacityActive ? 'Capacity On' : 'Capacity Suspended'} placement='top'>
-          <Circle color={circleColor} />
-        </Tooltip>
-      )}
-      <UserDropdown settings={settings} saveSettings={saveSettings} />
+    <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+      <Box className='actions-right' sx={{ display: 'flex', alignItems: 'center' }}>
+        {isMounted && isDashboardPath && (
+          <ModeFullscreen disabled={!isLoaded} onClick={() => fullscreen && fullscreen()} />
+        )}
+        {canViewRoles && powerBICapacityExists && (
+          <Tooltip title={powerBIEmbedCapacityActive ? 'Capacity On' : 'Capacity Suspended'} placement='top'>
+            <Circle color={circleColor} />
+          </Tooltip>
+        )}
+        <UserDropdown settings={settings} saveSettings={saveSettings} />
+      </Box>
     </Box>
   )
 }

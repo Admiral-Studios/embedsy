@@ -17,6 +17,9 @@ import { yupResolver } from '@hookform/resolvers/yup'
 // ** Hooks
 import { useSettings } from 'src/@core/hooks/useSettings'
 import { useState } from 'react'
+import { useRouter } from 'next/router'
+import toast from 'react-hot-toast'
+import axios from 'axios'
 
 const FormButton = styled(Button)(({ theme }) => ({
   '&.MuiButtonBase-root.MuiButton-root.MuiButton-contained.MuiButton-containedPrimary.MuiButton-sizeMedium.MuiButton-containedSizeMedium.MuiButton-disableElevation.MuiButton-fullWidth':
@@ -42,11 +45,14 @@ const ForgotPasswordForm = () => {
 
   const { appBranding } = useSettings()
 
+  const { push } = useRouter()
+
   const [isLoading, setIsLoading] = useState(false)
 
   const {
     control,
     handleSubmit,
+    setError,
     formState: { errors }
   } = useForm({
     defaultValues,
@@ -54,7 +60,26 @@ const ForgotPasswordForm = () => {
     resolver: yupResolver(schema)
   })
 
-  const submit = async (data: FormData) => {}
+  const submit = async (data: FormData) => {
+    try {
+      setIsLoading(true)
+      await axios.post('/api/auth/forgot-password', {
+        ...data
+      })
+      toast.success('Further instructions have been sent to your email', { duration: 7000 })
+
+      push('/login')
+    } catch (error: any) {
+      if (error) {
+        setError('email', {
+          type: 'manual',
+          message: error?.response?.data?.message
+        })
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <Box sx={{ width: '100%', maxWidth: 400 }}>
@@ -97,7 +122,7 @@ const ForgotPasswordForm = () => {
         </Box>
 
         <FormButton fullWidth type='submit' variant='contained' sx={{ mb: 4 }} disabled={isLoading}>
-          Login
+          Reset Password
         </FormButton>
       </form>
     </Box>

@@ -95,3 +95,39 @@ export interface ChangedUserData {
   email?: string
   username?: string
 }
+
+export type NangoIntegration = {
+  display_name: string
+  logo: string
+  provider: string
+}
+
+export type NangoConnection = {
+  connectionId: string
+  providerConfigKey: string
+}
+
+export type NangoValuesType = {
+  connectionId?: string
+  providerConfigKey?: string
+  connections: NangoConnection[]
+  setConnections: React.Dispatch<React.SetStateAction<NangoConnection[]>>
+  setConnectionId: (connectionId: string) => void | null
+  setProviderConfigKey: (providerConfigKey: string) => void | null
+  getConnectionByKey: (providerConfigKey: string) => NangoConnection | null
+  integrations: NangoIntegration[]
+  getIntegrations: () => Promise<void>
+}
+
+export type NangoSync = {
+  id: string
+  connection_id: string
+  type: string
+  finishedAt: string
+  nextScheduledSyncAt: string
+  name: string
+  variant: string
+  status: string
+  frequency: string
+  latestExecutionStatus: string
+}

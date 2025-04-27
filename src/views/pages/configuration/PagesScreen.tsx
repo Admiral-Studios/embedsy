@@ -57,7 +57,8 @@ const FooterItemValueStyled = styled(Typography)(() => ({
 }))
 
 const PagesScreen = () => {
-  const { handleRefreshClick, reportsNeedUpdating, syncReportsWithTenant } = useContext(UserConfigurationContext)
+  const { handleRefreshClick, reportsNeedUpdating, syncReportsWithTenant, loadingData } =
+    useContext(UserConfigurationContext)
   const { removeAllPageRolesById, addUpdatePage, pages } = useContext(PagesContext)
   const { isAdmin, isSuperAdmin } = useAuth()
   const { removeRoleReport, roles } = useContext(RolesContext)
@@ -122,8 +123,8 @@ const PagesScreen = () => {
       if (page) {
         return `Delete page ${getPageTitle(page)}?`
       }
-      
-return 'Delete page?'
+
+      return 'Delete page?'
     }
 
     if (selectedIds.length === 0) {
@@ -135,15 +136,15 @@ return 'Delete page?'
       if (page) {
         return `Delete page ${getPageTitle(page)}?`
       }
-      
-return 'Delete page?'
+
+      return 'Delete page?'
     }
 
     const pageTitles = selectedIds
       .map(id => {
         const page = pages.find(p => p.id === id)
-        
-return page ? getPageTitle(page) : null
+
+        return page ? getPageTitle(page) : null
       })
       .filter(Boolean)
       .join(', ')
@@ -271,106 +272,118 @@ return page ? getPageTitle(page) : null
     }
   }
 
-  if (!pages.length)
+  if (loadingData) {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress />
       </Box>
     )
+  }
+
+  const renderControls = () => (
+    <Grid container spacing={4} mb={6} sx={{ alignItems: 'flex-end' }}>
+      <Grid item md={3.5} xs={12}>
+        <CustomTextField
+          label='Search By Title'
+          placeholder='Enter Search Term'
+          fullWidth
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
+      </Grid>
+
+      <Grid item md={3} xs={12}>
+        <Filter
+          value={pagesType || []}
+          onChange={newTypes => setPagesType(newTypes)}
+          options={Object.values(PageTypesEnum)}
+          label='Filter By Type'
+        />
+      </Grid>
+      <Grid item md={5.5} xs={12}>
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 2
+          }}
+        >
+          <Button variant='contained' onClick={() => setOpenModal(true)}>
+            Add Page
+          </Button>
+
+          <Button
+            variant='contained'
+            color='error'
+            disabled={!selectedIds.length}
+            onClick={() => setOpenRemoveModal(true)}
+          >
+            Delete Pages
+          </Button>
+
+          <DensityButtons density={density} onChangeDensity={d => setDensity(d)} />
+        </Box>
+      </Grid>
+
+      {(isAdmin || isSuperAdmin) && (
+        <Grid item xs={12}>
+          <Box
+            sx={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end'
+            }}
+          >
+            <Tooltip
+              title={
+                !reportsNeedUpdating.length
+                  ? 'All reports are up to date'
+                  : `${reportsNeedUpdating.length} reports need to be updated or deleted`
+              }
+            >
+              <span>
+                <Button
+                  variant='contained'
+                  onClick={syncReports}
+                  disabled={!reportsNeedUpdating.length || isLoadingSync}
+                  sx={{
+                    '&.Mui-disabled': {
+                      pointerEvents: 'auto',
+
+                      '&:hover': {
+                        backgroundColor: 'rgba(47, 43, 61, 0.12)',
+                        boxShadow: 'none'
+                      }
+                    }
+                  }}
+                >
+                  Sync Reports with Power BI Service
+                </Button>
+              </span>
+            </Tooltip>
+          </Box>
+        </Grid>
+      )}
+    </Grid>
+  )
+
+  if (!pages.length) {
+    return (
+      <>
+        {renderControls()}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
+          <Typography variant='h6'>There are no pages available.</Typography>
+        </Box>
+      </>
+    )
+  }
 
   return (
     <>
-      <ItemList
-        controls={
-          <Grid container spacing={4} mb={6} sx={{ alignItems: 'flex-end' }}>
-            <Grid item md={3.5} xs={12}>
-              <CustomTextField
-                label='Search By Title'
-                placeholder='Enter Search Term'
-                fullWidth
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </Grid>
-
-            <Grid item md={3} xs={12}>
-              <Filter
-                value={pagesType || []}
-                onChange={newTypes => setPagesType(newTypes)}
-                options={Object.values(PageTypesEnum)}
-                label='Filter By Type'
-              />
-            </Grid>
-            <Grid item md={5.5} xs={12}>
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  gap: 2
-                }}
-              >
-                <Button variant='contained' onClick={() => setOpenModal(true)}>
-                  Add Page
-                </Button>
-
-                <Button
-                  variant='contained'
-                  color='error'
-                  disabled={!selectedIds.length}
-                  onClick={() => setOpenRemoveModal(true)}
-                >
-                  Delete Pages
-                </Button>
-
-                <DensityButtons density={density} onChangeDensity={d => setDensity(d)} />
-              </Box>
-            </Grid>
-
-            {(isAdmin || isSuperAdmin) && (
-              <Grid item xs={12}>
-                <Box
-                  sx={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end'
-                  }}
-                >
-                  <Tooltip
-                    title={
-                      !reportsNeedUpdating.length
-                        ? 'All reports are up to date'
-                        : `${reportsNeedUpdating.length} reports need to be updated or deleted`
-                    }
-                  >
-                    <span>
-                      <Button
-                        variant='contained'
-                        onClick={syncReports}
-                        disabled={!reportsNeedUpdating.length || isLoadingSync}
-                        sx={{
-                          '&.Mui-disabled': {
-                            pointerEvents: 'auto',
-
-                            '&:hover': {
-                              backgroundColor: 'rgba(47, 43, 61, 0.12)',
-                              boxShadow: 'none'
-                            }
-                          }
-                        }}
-                      >
-                        Sync Reports with Power BI Service
-                      </Button>
-                    </span>
-                  </Tooltip>
-                </Box>
-              </Grid>
-            )}
-          </Grid>
-        }
-      >
+      <ItemList controls={renderControls()}>
         {searchedPages.slice(0, visiblePages).map(page => {
           const previewPages = page.preview_pages
           const status = page.last_refresh_status

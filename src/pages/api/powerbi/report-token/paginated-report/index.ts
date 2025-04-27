@@ -49,7 +49,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
       })),
       reports: [
         {
-          id: '9c751066-6943-44fd-afe4-cb0607a6a4fd',
+          id: reportId,
           allowEdit: false
         }
       ]

@@ -324,7 +324,7 @@ export const SettingsProvider = ({ children, pageSettings }: SettingsProviderPro
     const getCustomBranding = async () => {
       try {
         let roleCustomBranding
-        if (user) {
+        if (user && (user.role_id || user.custom_role_id)) {
           const roleIdToUse = user.custom_role_id || user.role_id
           const response = await axios.get('/api/db_transactions/role_branding/get/by_role_id', {
             params: { roleId: roleIdToUse }

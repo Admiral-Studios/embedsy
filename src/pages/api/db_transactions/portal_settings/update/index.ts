@@ -17,13 +17,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!settings?.length) {
       return res.status(400).json({ message: 'No settings provided' })
     }
-
     const trialCapacitySetting = settings.find((s: PortalSetting) => s.setting === 'power_bi_trial_capacity')
     if (trialCapacitySetting?.value_boolean) {
       try {
-        await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/capacity/manage`, {
-          action: 'suspend'
-        })
+        await axios.post(`${process.env.NEXT_PUBLIC_URL}/api/powerbi/capacity/suspend`)
       } catch (error) {
         console.error('Failed to suspend capacity:', error)
       }

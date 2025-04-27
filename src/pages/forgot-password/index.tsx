@@ -1,16 +1,14 @@
 // ** React Imports
-import React, { ReactNode, useEffect } from 'react'
+import React, { ReactNode } from 'react'
 
 // ** MUI Components
 import Box, { BoxProps } from '@mui/material/Box'
 import { styled } from '@mui/material/styles'
 
 // ** Layout Import
-import LoginImage from 'src/views/pages/login/components/LoginImage'
 
 // ** Hooks
 import { useSettings } from 'src/@core/hooks/useSettings'
-import { useRouter } from 'next/router'
 
 // ** Layout Import
 import BlankLayout from 'src/@core/layouts/BlankLayout'
@@ -18,6 +16,7 @@ import BlankLayout from 'src/@core/layouts/BlankLayout'
 // ** Types
 import type { AppPortalSettings } from 'src/@core/context/settingsContext'
 import ForgotPasswordForm from 'src/views/pages/forgot-password/components/ForgotPasswordForm'
+import LandingPagesImage from 'src/components/shared/LandingPages/LandingPagesImage'
 
 const FormWrapper = styled(Box)<BoxProps>(({ theme }) => ({
   width: '100%',
@@ -36,27 +35,26 @@ const ForgotPasswordPage = () => {
   // ** Hooks
   const { appPortalSettings, appBranding, customBrandingLoaded, loadingPortalSettings } = useSettings()
   const { login_layout } = appPortalSettings
-  const router = useRouter()
 
   // ** Image render
   const leftImageRender = (
-    <LoginImage
+    <LandingPagesImage
       key='left-image'
       customBrandingLoaded={customBrandingLoaded}
-      customImage={appBranding?.login_page_image}
+      customImage={appBranding?.forgot_password_page_image}
     />
   )
   const rightImageRender = (
-    <LoginImage
+    <LandingPagesImage
       key='right-image'
       customBrandingLoaded={customBrandingLoaded}
-      customImage={appBranding?.login_page_image}
+      customImage={appBranding?.forgot_password_page_image}
       sx={{ margin: theme => theme.spacing(8, 8, 8, 0) }}
     />
   )
 
-  // ** Login form render
-  const loginFormRender = (
+  // ** Forgot password form render
+  const forgotPasswordFormRender = (
     <FormWrapper key='login-form'>
       <Box
         sx={{
@@ -72,22 +70,12 @@ const ForgotPasswordPage = () => {
     </FormWrapper>
   )
 
-  useEffect(() => {
-    const { user, pass } = router.query
-    if (user && typeof user === 'string') {
-      sessionStorage.setItem('loginEmail', user)
-    }
-    if (pass && typeof pass === 'string') {
-      sessionStorage.setItem('loginPassword', pass)
-    }
-  }, [router.query])
-
   // ** Content render options
   const contentRenderOptions: Partial<
     Record<NonNullable<Extract<AppPortalSettings['login_layout'], string>>, ReactNode[]>
   > = {
-    'IMAGE LEFT, LOGIN RIGHT': [leftImageRender, loginFormRender],
-    'LOGIN LEFT, IMAGE RIGHT': [loginFormRender, rightImageRender]
+    'IMAGE LEFT, LOGIN RIGHT': [leftImageRender, forgotPasswordFormRender],
+    'LOGIN LEFT, IMAGE RIGHT': [forgotPasswordFormRender, rightImageRender]
   }
 
   const contentRender =

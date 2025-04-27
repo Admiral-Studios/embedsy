@@ -1,5 +1,5 @@
 import { useContext, useMemo, useState } from 'react'
-import { Box, Button, CircularProgress, Grid, IconButton, Tooltip } from '@mui/material'
+import { Box, Button, CircularProgress, Grid, IconButton, Tooltip, Typography } from '@mui/material'
 import ConfirmationDialog from 'src/components/shared/ConfirmationDialog'
 import AddRoleModal from './components/AddRoleModal'
 import AddUserModal from './components/AddUserModal'
@@ -21,20 +21,22 @@ import { UsersContext } from 'src/context/UserConfiguration/UsersContext'
 import { RolesContext } from 'src/context/UserConfiguration/RolesContext'
 import { PermanentRoles } from 'src/context/types'
 import { Icon } from '@iconify/react'
+import { UserConfigurationContext } from 'src/context/UserConfiguration/UserConfigurationSharedDataContext'
 
 const RolesScreen = () => {
+  const { loadingData } = useContext(UserConfigurationContext)
   const { addUpdatePage, removePagesById } = useContext(PagesContext)
   const { assignUserToRole, removeUsers, deleteUsersFromPortal, userRoles } = useContext(UsersContext)
   const { addNewRole, removeRoles, allRolesData } = useContext(RolesContext)
 
-  const allUsersEmails = userRoles.map(({ email }) => email)
+  const allUsersEmails = userRoles.map(({ email, role }) => ({ email, role }))
 
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [openAddModal, setOpenAddModal] = useState(false)
   const [openRemoveModal, setOpenRemoveModal] = useState(false)
   const [visibleRoles, setVisibleRoles] = useState(CONFIG_ITEMS_PER_PAGE)
   const [roleIdToDelete, setRoleIdToDelete] = useState<number | null>(null)
-  const [roleIdToAssignUser, setRoleIdToAssignUser] = useState<number | null>(null)
+  const [roleToAssignUser, setRoleToAssignUser] = useState<RoleWithUsersPagesType | null>(null)
   const [pageToAdd, setPageToAdd] = useState<CreationPageType | null>(null)
   const [roleToUpdate, setRoleToUpdate] = useState<RoleWithUsersPagesType | null>(null)
   const [pageToDelete, setPageToDelete] = useState<{ id: number; name: string } | null>(null)
@@ -80,9 +82,13 @@ const RolesScreen = () => {
     }
   }
 
+  const handleAssignUsersClick = (role: RoleWithUsersPagesType) => {
+    setRoleToAssignUser(role)
+  }
+
   const handleAssignUsers = async (emails: string[]) => {
-    if (roleIdToAssignUser) {
-      await Promise.all(emails.map(email => assignUserToRole(roleIdToAssignUser, email)))
+    if (roleToAssignUser?.id) {
+      await Promise.all(emails.map(email => assignUserToRole(roleToAssignUser?.id, email)))
     }
   }
 
@@ -174,56 +180,67 @@ const RolesScreen = () => {
     setUserIdToDelete(null)
   }
 
-  if (!allRolesData.length)
+  if (loadingData)
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CircularProgress />
       </Box>
     )
 
+  const renderControls = (
+    <Grid container spacing={8} mb={6} sx={{ alignItems: 'flex-end' }}>
+      <Grid item md={4} xs={12}>
+        <CustomTextField
+          label='Search By Role Name'
+          placeholder='Enter Search Term'
+          fullWidth
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
+      </Grid>
+
+      <Grid item md={8} xs={12}>
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 2
+          }}
+        >
+          <Button variant='contained' onClick={() => setOpenAddModal(true)}>
+            Add Role
+          </Button>
+
+          <Button
+            variant='contained'
+            color='error'
+            disabled={!selectedIds.length}
+            onClick={() => setOpenRemoveModal(true)}
+          >
+            Delete Roles
+          </Button>
+
+          <DensityButtons density={density} onChangeDensity={d => setDensity(d)} />
+        </Box>
+      </Grid>
+    </Grid>
+  )
+
+  if (!allRolesData.length)
+    return (
+      <>
+        {renderControls}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', mt: 8 }}>
+          <Typography variant='h6'>There are no roles available.</Typography>
+        </Box>
+      </>
+    )
+
   return (
     <>
-      <ItemList
-        controls={
-          <Grid container spacing={8} mb={6} sx={{ alignItems: 'flex-end' }}>
-            <Grid item md={6} xs={12}>
-              <CustomTextField
-                label='Search By Role Name'
-                placeholder='Enter Search Term'
-                fullWidth
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-end',
-                  gap: 2
-                }}
-              >
-                <Button variant='contained' onClick={() => setOpenAddModal(true)}>
-                  Add Role
-                </Button>
-
-                <Button
-                  variant='contained'
-                  color='error'
-                  disabled={!selectedIds.length}
-                  onClick={() => setOpenRemoveModal(true)}
-                >
-                  Delete Roles
-                </Button>
-
-                <DensityButtons density={density} onChangeDensity={d => setDensity(d)} />
-              </Box>
-            </Grid>
-          </Grid>
-        }
-      >
+      <ItemList controls={renderControls}>
         {searchedRoles.slice(0, visibleRoles).map(role => (
           <ItemCard
             key={role.id}
@@ -282,7 +299,7 @@ const RolesScreen = () => {
                 <Button
                   variant='outlined'
                   size='small'
-                  onClick={() => setRoleIdToAssignUser(role.id)}
+                  onClick={() => handleAssignUsersClick(role)}
                   sx={{ borderRadius: 4 }}
                 >
                   Assign Users +
@@ -394,9 +411,10 @@ const RolesScreen = () => {
       />
 
       <AddUserModal
-        open={!!roleIdToAssignUser}
+        open={!!roleToAssignUser}
+        roleToAssignUser={roleToAssignUser}
         allUsersEmails={allUsersEmails}
-        onClose={() => setRoleIdToAssignUser(null)}
+        onClose={() => setRoleToAssignUser(null)}
         handleProcessed={handleAssignUsers}
       />
 

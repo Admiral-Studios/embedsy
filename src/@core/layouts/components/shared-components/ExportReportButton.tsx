@@ -2,6 +2,7 @@ import { Box, Menu, MenuItem, MenuItemProps, styled } from '@mui/material'
 import React, { useState } from 'react'
 import toast from 'react-hot-toast'
 import Icon from 'src/@core/components/icon'
+import FileDownloadIcon from '@mui/icons-material/FileDownload'
 import { exportTo } from 'src/utils/powerbi/exportTo'
 
 const MenuItemStyled = styled(MenuItem)<MenuItemProps>(({ theme }) => ({
@@ -71,7 +72,8 @@ const ExportReportButton = ({ workspaceId, reportId, onCloseDropdown, datasetId,
     <>
       <MenuItemStyled sx={{ p: 0, m: 0, mx: 2 }} id='export-button' disabled={loading} onClick={handleOpenExportMenu}>
         <Box sx={styles}>
-          <Icon icon='mingcute:settings-2-line' />
+          {/* <Icon icon='mdi:file-download' /> */}
+          <FileDownloadIcon />
           Export Report
         </Box>
       </MenuItemStyled>
